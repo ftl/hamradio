@@ -51,7 +51,7 @@ func localFilename() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(usr.HomeDir, ".dxcc/cty.dat"), nil
+	return filepath.Join(usr.HomeDir, ".config/hamradio/cty.dat"), nil
 }
 
 func parseLocator() (locator.Locator, bool) {
