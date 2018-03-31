@@ -1,3 +1,20 @@
+/*
+locator calculates latitude and longitude for a given maidenhead locator.
+It can also calculate the distance and azimuth to an optionally given second maidenhead locator.
+
+USAGE
+
+	locator <locator1> [locator2]
+
+EXAMPLE
+
+	> locator EM12af KO94bx
+
+	Locator EM12af = (32.22917N, 97.95833W)
+	Locator KO94bx = (54.97917N, 38.12500E)
+	Distance: 9452.2km
+	Azimuth: 23.6°
+*/
 package main
 
 import (
@@ -11,7 +28,7 @@ import (
 
 func main() {
 	if len(os.Args) < 2 || len(os.Args) > 3 {
-		fmt.Printf("usage: %s <locator1> [<locator2>]\n", filepath.Base(os.Args[0]))
+		fmt.Printf("usage: %s <locator1> [locator2]\n", filepath.Base(os.Args[0]))
 		os.Exit(0)
 	}
 
