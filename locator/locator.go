@@ -14,17 +14,17 @@ import (
 // This is equivalent to an accuracy of 500m.
 type Locator [8]byte
 
-var parseLocatorExpression = regexp.MustCompile("([A-Ra-r]{2})(?:([0-9]{2})(?:([A-Xa-x]{2})([0-9]{2})?)?)?")
+var parseLocatorExpression = regexp.MustCompile("([A-R]{2})(?:([0-9]{2})(?:([A-X]{2})([0-9]{2})?)?)?")
 
 // Parse parses a maidenhead locator from a string.
 func Parse(s string) (Locator, error) {
-	trimmedString := strings.TrimSpace(s)
-	if !parseLocatorExpression.MatchString(trimmedString) {
+	normalString := strings.ToUpper(strings.TrimSpace(s))
+	if !parseLocatorExpression.MatchString(normalString) {
 		return Locator{}, fmt.Errorf("%q is not a valid maidenhead locator", s)
 	}
 
-	matches := parseLocatorExpression.FindAllStringSubmatch(trimmedString, 1)
-	if len(matches[0][0]) != len(trimmedString) {
+	matches := parseLocatorExpression.FindAllStringSubmatch(normalString, 1)
+	if len(matches[0][0]) != len(normalString) {
 		return Locator{}, fmt.Errorf("%q is not a valid maidenhead locator", s)
 	}
 
