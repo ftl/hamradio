@@ -1,3 +1,16 @@
+/*
+latlon calculates the distance and azimuth between two coordinates given as pairs of latitude and longitude.
+
+USAGE
+
+	latlon <latitude1> <longitude1> <latitude2> <longitude2>
+
+EXAMPLE
+
+	> latlon 12.3 45.6 78.9 10.1
+
+	Distance: 7646.4km, Azimuth: 353.1°
+*/
 package main
 
 import (
