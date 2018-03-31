@@ -1,3 +1,41 @@
+/*
+dxcc prints information about a given DXCC prefix.
+It can also calculate the distance and azimuth from an optionally given maidenhead locator to that prefix.
+
+If the given prefix is ambiguous (e.g. MZ is for the Shetlands and also for Scotland),
+multiple datasets are returned.
+
+USAGE
+
+	dxcc <prefix> [locator]
+
+EXAMPLE
+
+
+	> dxcc mz em12af
+
+	Prefix MZ: Shetland Islands (GM/s)
+	Continent: EU
+	CQ: 14
+	ITU: 27
+	Location: (60.50000N, 1.50000W)
+	Time Offset: UTC+0.0
+	ARRL compliant: false
+	Exact Match: false
+	Distance: 7264.9km
+	Azimuth: 32.6°
+
+	Prefix MZ: Scotland (GM)
+	Continent: EU
+	CQ: 14
+	ITU: 27
+	Location: (56.82000N, 4.18000W)
+	Time Offset: UTC+0.0
+	ARRL compliant: true
+	Exact Match: false
+	Distance: 7275.2km
+	Azimuth: 36.9°
+*/
 package main
 
 import (
@@ -31,7 +69,7 @@ func main() {
 	}
 
 	if len(os.Args) < 2 || len(os.Args) > 3 {
-		fmt.Printf("usage: %s <prefix> [<locator>]\n", filepath.Base(os.Args[0]))
+		fmt.Printf("usage: %s <prefix> [locator]\n", filepath.Base(os.Args[0]))
 		os.Exit(0)
 	}
 
