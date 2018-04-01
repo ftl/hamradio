@@ -72,11 +72,11 @@ func parseHeaderLine(line string) (*dxccHeader, error) {
 	var err error
 	header := &dxccHeader{}
 	header.Name = strings.TrimSpace(fields[0])
-	header.CQZone, err = parseCQZone(fields[1])
+	header.CQZone, err = ParseCQZone(fields[1])
 	if err != nil {
 		return &dxccHeader{}, err
 	}
-	header.ITUZone, err = parseITUZone(fields[2])
+	header.ITUZone, err = ParseITUZone(fields[2])
 	if err != nil {
 		return &dxccHeader{}, err
 	}
@@ -85,7 +85,7 @@ func parseHeaderLine(line string) (*dxccHeader, error) {
 	if err != nil {
 		return &dxccHeader{}, err
 	}
-	header.TimeOffset, err = parseTimeOffset(fields[6])
+	header.TimeOffset, err = ParseTimeOffset(fields[6])
 	if err != nil {
 		return &dxccHeader{}, err
 	}
@@ -97,7 +97,8 @@ func parseHeaderLine(line string) (*dxccHeader, error) {
 	return header, nil
 }
 
-func parseCQZone(s string) (CQZone, error) {
+// ParseCQZone parses the CQ zone information from a string.
+func ParseCQZone(s string) (CQZone, error) {
 	value, err := strconv.ParseInt(strings.TrimSpace(s), 10, 8)
 	if err != nil {
 		return CQZone(0), fmt.Errorf("cannot parse CQ zone: %v", err)
@@ -105,7 +106,8 @@ func parseCQZone(s string) (CQZone, error) {
 	return CQZone(value), nil
 }
 
-func parseITUZone(s string) (ITUZone, error) {
+// ParseITUZone parses the ITU zone information from a string.
+func ParseITUZone(s string) (ITUZone, error) {
 	value, err := strconv.ParseInt(strings.TrimSpace(s), 10, 8)
 	if err != nil {
 		return ITUZone(0), fmt.Errorf("cannot parse ITU zone: %v", err)
@@ -114,19 +116,20 @@ func parseITUZone(s string) (ITUZone, error) {
 }
 
 func parseLatLon(latString, lonString string) (latlon.LatLon, error) {
-	lat, err := strconv.ParseFloat(strings.TrimSpace(latString), 64)
+	lat, err := latlon.ParseLat(strings.TrimSpace(latString))
 	if err != nil {
-		return latlon.LatLon{}, fmt.Errorf("cannot parse latitude: %v", err)
+		return latlon.LatLon{}, err
 	}
-	lon, err := strconv.ParseFloat(strings.TrimSpace(lonString), 64)
+	lon, err := latlon.ParseLon(strings.TrimSpace(lonString))
 	if err != nil {
-		return latlon.LatLon{}, fmt.Errorf("cannot parse longitude: %v", err)
+		return latlon.LatLon{}, err
 	}
 
-	return *latlon.NewLatLon(latlon.Latitude(lat), latlon.Longitude(lon*-1)), nil
+	return *latlon.NewLatLon(lat, lon*-1), nil
 }
 
-func parseTimeOffset(s string) (TimeOffset, error) {
+// ParseTimeOffset parses the time offset information from a string.
+func ParseTimeOffset(s string) (TimeOffset, error) {
 	value, err := strconv.ParseFloat(strings.TrimSpace(s), 64)
 	if err != nil {
 		return TimeOffset(0), fmt.Errorf("cannot parse TimeOffset: %v", err)
@@ -200,7 +203,7 @@ var overrideCQZoneExpression = regexp.MustCompile("\\(([0-9]+)\\)")
 func overrideCQZone(prefix *Prefix, s string) (err error) {
 	matches := overrideCQZoneExpression.FindStringSubmatch(s)
 	if matches != nil {
-		prefix.CQZone, err = parseCQZone(matches[1])
+		prefix.CQZone, err = ParseCQZone(matches[1])
 	}
 	return
 }
@@ -210,7 +213,7 @@ var overrideITUZoneExpression = regexp.MustCompile("\\[([0-9]+)\\]")
 func overrideITUZone(prefix *Prefix, s string) (err error) {
 	matches := overrideITUZoneExpression.FindStringSubmatch(s)
 	if matches != nil {
-		prefix.ITUZone, err = parseITUZone(matches[1])
+		prefix.ITUZone, err = ParseITUZone(matches[1])
 	}
 	return
 }
@@ -240,7 +243,7 @@ var overrideTimeOffsetExpression = regexp.MustCompile("~(-?[0-9]+(?:\\.[0-9]+)?)
 func overrideTimeOffset(prefix *Prefix, s string) (err error) {
 	matches := overrideTimeOffsetExpression.FindStringSubmatch(s)
 	if matches != nil {
-		prefix.TimeOffset, err = parseTimeOffset(matches[1])
+		prefix.TimeOffset, err = ParseTimeOffset(matches[1])
 	}
 	return
 }
