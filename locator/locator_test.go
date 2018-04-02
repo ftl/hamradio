@@ -94,3 +94,10 @@ func TestLatLonToLocator(t *testing.T) {
 		}
 	}
 }
+
+func TestIsZero(t *testing.T) {
+	l := Locator{}
+	if !l.IsZero() {
+		t.Errorf("new locator should be zero if it was only initialized")
+	}
+}

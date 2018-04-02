@@ -45,6 +45,11 @@ func (l Locator) String() string {
 	return strings.TrimRight(strings.TrimSpace(string(l[:])), "\x00")
 }
 
+// IsZero returns true if this locator is zero.
+func (l Locator) IsZero() bool {
+	return l[0] == 0
+}
+
 // ToLatLon converts a maidenhead locator into a pair of latitude and longitude coordinates.
 // The coordinates represent the center of the square with the given precision of the locator.
 func ToLatLon(locator Locator) *latlon.LatLon {
