@@ -1,6 +1,7 @@
 /*
 dxcc prints information about a given DXCC prefix.
-It can also calculate the distance and azimuth from an optionally given maidenhead locator to that prefix.
+It can also calculate the distance and azimuth from an optionally given maidenhead locator
+to that prefix.
 
 If the given prefix is ambiguous (e.g. MZ is for the Shetlands and also for Scotland),
 multiple datasets are returned.
@@ -35,6 +36,11 @@ EXAMPLE
 	Exact Match: false
 	Distance: 7275.2km
 	Azimuth: 36.9°
+
+CONFIGURATION
+
+	dxcc stores a cty.dat file in ~/.config/hamradio. The file is automatically updated if
+	there is a newer version available at http://www.country-files.com/cty/cty.dat.
 */
 package main
 
