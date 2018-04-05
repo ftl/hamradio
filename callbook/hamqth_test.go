@@ -9,7 +9,7 @@ import (
 )
 
 func TestHamQTH_get(t *testing.T) {
-	testServer := httptest.NewServer(serveValidRequest)
+	testServer := httptest.NewServer(serveValidHamQTHRequest)
 	defer testServer.Close()
 
 	hamQTH := NewHamQTH("the_username", "the_password")
@@ -91,7 +91,7 @@ func TestHamQTH_login(t *testing.T) {
 }
 
 func TestHamQTH_Lookup(t *testing.T) {
-	testServer := httptest.NewServer(serveValidRequest)
+	testServer := httptest.NewServer(serveValidHamQTHRequest)
 	defer testServer.Close()
 
 	hamQTH := NewHamQTH("the_username", "the_password")
@@ -101,6 +101,7 @@ func TestHamQTH_Lookup(t *testing.T) {
 	info, err := hamQTH.Lookup("dl1abc")
 	if err != nil {
 		t.Error(err)
+		t.FailNow()
 	}
 	if info.Callsign.String() != "DL1ABC" {
 		t.Errorf("failed to receive callsign: %q", info.Callsign)
@@ -116,7 +117,7 @@ func TestHamQTH_Lookup(t *testing.T) {
 	}
 }
 
-var serveValidRequest = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+var serveValidHamQTHRequest = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	username := r.URL.Query().Get("u")
 	password := r.URL.Query().Get("p")
 	sessionID := r.URL.Query().Get("id")
