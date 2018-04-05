@@ -7,18 +7,29 @@ import (
 	"path/filepath"
 
 	"github.com/ftl/hamradio/callbook"
+	"github.com/ftl/hamradio/cfg"
 	"github.com/ftl/hamradio/latlon"
 	"github.com/ftl/hamradio/locator"
 )
 
 func main() {
-	if len(os.Args) < 4 || len(os.Args) > 5 {
-		fmt.Printf("usage: %s <callsign> <username> <password> [locator]\n", filepath.Base(os.Args[0]))
+	if len(os.Args) < 2 || len(os.Args) > 3 {
+		fmt.Printf("usage: %s <callsign> [locator]\n", filepath.Base(os.Args[0]))
 		os.Exit(0)
 	}
 	locator, useLocator := parseLocator()
 
-	hamqth := callbook.NewHamQTH(os.Args[2], os.Args[3])
+	config, err := cfg.LoadDefault()
+	if err != nil {
+		log.Fatalf("cannot load configuration file: %v", err)
+	}
+	username := config.Get("callbook.hamqth.username", "").(string)
+	password := config.Get("callbook.hamqth.password", "").(string)
+	if username == "" || password == "" {
+		log.Fatal("cannot read username or password for hamqth.com")
+	}
+
+	hamqth := callbook.NewHamQTH(username, password)
 
 	info, err := hamqth.Lookup(os.Args[1])
 	if err != nil {
@@ -31,11 +42,11 @@ func main() {
 }
 
 func parseLocator() (locator.Locator, bool) {
-	if len(os.Args) != 5 {
+	if len(os.Args) != 3 {
 		return locator.Locator{}, false
 	}
 
-	loc, err := locator.Parse(os.Args[4])
+	loc, err := locator.Parse(os.Args[2])
 	if err != nil {
 		fmt.Printf("cannot parse locator: %v\n", err)
 		return locator.Locator{}, false
