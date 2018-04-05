@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/ftl/hamradio/callsign"
 	"github.com/ftl/hamradio/dxcc"
@@ -15,7 +14,7 @@ import (
 )
 
 // HamQTH represents a connection to hamqth.com with a certain user account.
-// For more information about the API see https://www.hamqth.com/developers.php
+// For more information about the API see https://www.hamqth.com/developers.php.
 type HamQTH struct {
 	Username  string
 	password  string
@@ -56,7 +55,7 @@ func (h *HamQTH) Lookup(callsign string) (*Info, error) {
 		return &Info{}, err
 	}
 
-	info, err := searchToInfo(response.Search)
+	info, err := hamqthSearchToInfo(response.Search)
 	if err != nil {
 		return &Info{}, err
 	}
@@ -81,10 +80,6 @@ func (h *HamQTH) login() error {
 	h.sessionID = response.Session.SessionID
 
 	return nil
-}
-
-var httpClient = &http.Client{
-	Timeout: time.Second * 10,
 }
 
 func (h *HamQTH) get(params map[string]string) (*hamqthResponse, error) {
@@ -118,7 +113,7 @@ func (h *HamQTH) get(params map[string]string) (*hamqthResponse, error) {
 	}
 
 	if result.Session != nil && result.Session.Error != "" {
-		return new(hamqthResponse), fmt.Errorf("%v", result.Session.Error)
+		return new(hamqthResponse), fmt.Errorf("%v", strings.TrimSpace(result.Session.Error))
 	}
 
 	return result, nil
@@ -143,10 +138,14 @@ type hamqthSearch struct {
 	Nick             string   `xml:"nick"`
 	QTH              string   `xml:"qth"`
 	Country          string   `xml:"country"`
-	ADIFCountryID    string   `xml:"adif"`
+	DXCCCountryCode  string   `xml:"adif"`
 	ITUZone          string   `xml:"itu"`
 	CQZone           string   `xml:"cq"`
 	Grid             string   `xml:"grid"`
+	Latitude         string   `xml:"latitude"`
+	Longitude        string   `xml:"longitude"`
+	Continent        string   `xml:"continent"`
+	UTCOffset        string   `xml:"utc_offset"`
 	AdrName          string   `xml:"adr_name"`
 	AdrStreet1       string   `xml:"adr_street1"`
 	AdrStreet2       string   `xml:"adr_street2"`
@@ -173,10 +172,6 @@ type hamqthSearch struct {
 	BirthYear        string   `xml:"birth_year"`
 	LicenseYear      string   `xml:"lic_year"`
 	Picture          string   `xml:"picture"`
-	Latitude         string   `xml:"latitude"`
-	Longitude        string   `xml:"longitude"`
-	Continent        string   `xml:"continent"`
-	UTCOffset        string   `xml:"utc_offset"`
 	Facebook         string   `xml:"facebook"`
 	Twitter          string   `xml:"twitter"`
 	GooglePlus       string   `xml:"gplus"`
@@ -186,7 +181,7 @@ type hamqthSearch struct {
 	Vimeo            string   `xml:"vimeo"`
 }
 
-func searchToInfo(h *hamqthSearch) (*Info, error) {
+func hamqthSearchToInfo(h *hamqthSearch) (*Info, error) {
 	var result Info
 	var err error
 	result.Callsign, err = callsign.Parse(h.Callsign)
@@ -197,23 +192,10 @@ func searchToInfo(h *hamqthSearch) (*Info, error) {
 	result.QTH = h.QTH
 	result.Country = h.Country
 	result.Locator, _ = locator.Parse(h.Grid)
-	result.LatLon, _ = parseLatLon(h.Latitude, h.Longitude)
+	result.LatLon, _ = latlon.ParseLatLon(h.Latitude, h.Longitude)
 	result.CQZone, _ = dxcc.ParseCQZone(h.CQZone)
 	result.ITUZone, _ = dxcc.ParseITUZone(h.ITUZone)
 	result.TimeOffset, _ = dxcc.ParseTimeOffset(h.UTCOffset)
 
 	return &result, nil
-}
-
-func parseLatLon(latString, lonString string) (*latlon.LatLon, error) {
-	lat, err := latlon.ParseLat(strings.TrimSpace(latString))
-	if err != nil {
-		return &latlon.LatLon{}, err
-	}
-	lon, err := latlon.ParseLon(strings.TrimSpace(lonString))
-	if err != nil {
-		return &latlon.LatLon{}, err
-	}
-
-	return latlon.NewLatLon(lat, lon), nil
 }

@@ -3,6 +3,9 @@
 package callbook
 
 import (
+	"net/http"
+	"time"
+
 	"github.com/ftl/hamradio/callsign"
 	"github.com/ftl/hamradio/dxcc"
 	"github.com/ftl/hamradio/latlon"
@@ -20,4 +23,8 @@ type Info struct {
 	CQZone     dxcc.CQZone
 	ITUZone    dxcc.ITUZone
 	TimeOffset dxcc.TimeOffset
+}
+
+var httpClient = &http.Client{
+	Timeout: time.Second * 10,
 }
