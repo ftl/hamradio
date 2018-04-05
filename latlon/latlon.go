@@ -101,6 +101,20 @@ func normalizeLon(lon Longitude) Longitude {
 	return lon
 }
 
+// ParseLatLon parses a latitude and longitude from two strings and returns the parsed data as LatLon.
+func ParseLatLon(latString, lonString string) (*LatLon, error) {
+	lat, err := ParseLat(strings.TrimSpace(latString))
+	if err != nil {
+		return &LatLon{}, err
+	}
+	lon, err := ParseLon(strings.TrimSpace(lonString))
+	if err != nil {
+		return &LatLon{}, err
+	}
+
+	return NewLatLon(lat, lon), nil
+}
+
 func (latLon LatLon) String() string {
 	return fmt.Sprintf("(%v, %v)", latLon.Lat, latLon.Lon)
 }
