@@ -118,3 +118,25 @@ func Read(in io.Reader) (Configuration, error) {
 
 	return Configuration(data.(map[string]interface{})), nil
 }
+
+// Get retrieves the value at the given path in the configuration data. If the key path
+// cannot be found, the given default value is returned.
+func (config Configuration) Get(keyPath string, defaultValue interface{}) interface{} {
+	elements := strings.Split(keyPath, ".")
+	path := elements[:len(elements)-1]
+	key := elements[len(elements)-1]
+	currentNode := config
+	for _, element := range path {
+		nextNode := currentNode[element]
+		switch nextNode := nextNode.(type) {
+		case map[string]interface{}:
+			currentNode = nextNode
+		default:
+			return defaultValue
+		}
+	}
+	if value, exists := currentNode[key]; exists {
+		return value
+	}
+	return defaultValue
+}

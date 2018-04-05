@@ -73,3 +73,31 @@ func TestLoad(t *testing.T) {
 		t.Errorf("cannto retrieve test_key from test config, got %v", config)
 	}
 }
+
+func TestConfiguration_Get(t *testing.T) {
+	config, err := Load("./testdata", "")
+	if err != nil {
+		t.Errorf("failed to load test config file: %v", err)
+		t.FailNow()
+	}
+
+	rootValue := config.Get("test_key", "default")
+	if rootValue != "test_value" {
+		t.Errorf("failed to get root value, got %v", rootValue)
+	}
+
+	existingValue := config.Get("rootnode.subnode.key", "default")
+	if existingValue != "value" {
+		t.Errorf("failed to get existing value, got %v", existingValue)
+	}
+
+	nonExistingValue := config.Get("rootnode.subnode.another_key", "defaultValue")
+	if nonExistingValue != "defaultValue" {
+		t.Errorf("failed to get default value, got %v", nonExistingValue)
+	}
+
+	nonExistingPath := config.Get("rootnode.another_node.another_key", 123)
+	if nonExistingPath != 123 {
+		t.Errorf("failed to get default value for non-existing path, got %v", nonExistingPath)
+	}
+}
