@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/ftl/hamradio/callbook"
 	"github.com/ftl/hamradio/cfg"
@@ -23,21 +24,26 @@ func main() {
 	if err != nil {
 		log.Fatalf("cannot load configuration file: %v", err)
 	}
-	username := config.Get("callbook.hamqth.username", "").(string)
-	password := config.Get("callbook.hamqth.password", "").(string)
-	if username == "" || password == "" {
-		log.Fatal("cannot read username or password for hamqth.com")
-	}
 
-	hamqth := callbook.NewHamQTH(username, password)
-
-	info, err := hamqth.Lookup(os.Args[1])
+	hamQTHInfo, err := lookupHamQTH(os.Args[1], config)
 	if err != nil {
 		log.Fatal(err)
 	}
-	printInfo(info)
-	if useLocator {
-		printDistanceAzimuth(info, locator)
+	qrzInfo, err := lookupQRZ(os.Args[1], config)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if hamQTHInfo != nil {
+		printInfo("HamQTH.com", hamQTHInfo)
+		if useLocator {
+			printDistanceAzimuth(hamQTHInfo, locator)
+		}
+	}
+	if qrzInfo != nil {
+		printInfo("QRZ.com", qrzInfo)
+		if useLocator {
+			printDistanceAzimuth(qrzInfo, locator)
+		}
 	}
 }
 
@@ -53,7 +59,46 @@ func parseLocator() (locator.Locator, bool) {
 	}
 	return loc, true
 }
-func printInfo(info *callbook.Info) {
+
+func lookupHamQTH(callsign string, config cfg.Configuration) (*callbook.Info, error) {
+	useHamQTH := config.Get("callbook.hamqth", false) != false
+	if !useHamQTH {
+		return nil, nil
+	}
+
+	username := config.Get("callbook.hamqth.username", "").(string)
+	password := config.Get("callbook.hamqth.password", "").(string)
+	if username == "" || password == "" {
+		return nil, fmt.Errorf("cannot read username or password for hamqth.com")
+	}
+	hamqth := callbook.NewHamQTH(username, password)
+
+	return hamqth.Lookup(os.Args[1])
+}
+
+func lookupQRZ(callsign string, config cfg.Configuration) (*callbook.Info, error) {
+	useQRZ := config.Get("callbook.qrz", false) != false
+	if !useQRZ {
+		return nil, nil
+	}
+
+	username := config.Get("callbook.qrz.username", "").(string)
+	password := config.Get("callbook.qrz.password", "").(string)
+	if username == "" || password == "" {
+		return nil, fmt.Errorf("cannot read username or password for qrz.com")
+	}
+	qrz := callbook.NewQRZ(username, password)
+
+	return qrz.Lookup(os.Args[1])
+}
+
+func printInfo(title string, info *callbook.Info) {
+	if info == nil {
+		return
+	}
+
+	fmt.Println(title)
+	fmt.Println(strings.Repeat("=", len(title)))
 	fmt.Printf("Callsign %v\n", info.Callsign)
 	fmt.Printf("Name: %s\n", info.Name)
 	fmt.Printf("QTH: %s\n", info.Country)
