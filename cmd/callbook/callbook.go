@@ -87,25 +87,15 @@ func main() {
 		log.Fatalf("cannot load configuration file: %v", err)
 	}
 
-	hamQTHInfo, err := lookupHamQTH(os.Args[1], config)
-	if err != nil {
-		log.Fatal(err)
-	}
-	qrzInfo, err := lookupQRZ(os.Args[1], config)
-	if err != nil {
-		log.Fatal(err)
-	}
-	if hamQTHInfo != nil {
-		printInfo("HamQTH.com", hamQTHInfo)
+	callbooks := loadCallbooks(config)
+	infos := lookup(os.Args[1], callbooks)
+	for name, info := range infos {
+		printInfo(name, info)
 		if useLocator {
-			printDistanceAzimuth(hamQTHInfo, locator)
+			printDistanceAzimuth(info, locator)
 		}
-	}
-	if qrzInfo != nil {
-		printInfo("QRZ.com", qrzInfo)
-		if useLocator {
-			printDistanceAzimuth(qrzInfo, locator)
-		}
+		fmt.Println()
+
 	}
 }
 
@@ -122,36 +112,52 @@ func parseLocator() (locator.Locator, bool) {
 	return loc, true
 }
 
-func lookupHamQTH(callsign string, config cfg.Configuration) (*callbook.Info, error) {
-	useHamQTH := config.Get("callbook.hamqth", false) != false
-	if !useHamQTH {
-		return nil, nil
+func loadCallbooks(config cfg.Configuration) map[string]callbook.Callbook {
+	params := []struct {
+		name       string
+		configPath string
+		factory    callbook.Factory
+	}{
+		{"HamQTH.com", "callbook.hamqth", func(username, password string) callbook.Callbook {
+			return callbook.NewHamQTH(username, password)
+		}},
+		{"QRZ.com", "callbook.qrz", func(username, password string) callbook.Callbook {
+			return callbook.NewQRZ(username, password)
+		}},
 	}
-
-	username := config.Get("callbook.hamqth.username", "").(string)
-	password := config.Get("callbook.hamqth.password", "").(string)
-	if username == "" || password == "" {
-		return nil, fmt.Errorf("cannot read username or password for hamqth.com")
+	callbooks := make(map[string]callbook.Callbook)
+	for _, param := range params {
+		callbook, err := newCallbook(param.configPath, config, param.factory)
+		if err == nil {
+			callbooks[param.name] = callbook
+		}
 	}
-	hamqth := callbook.NewHamQTH(username, password)
-
-	return hamqth.Lookup(os.Args[1])
+	return callbooks
 }
 
-func lookupQRZ(callsign string, config cfg.Configuration) (*callbook.Info, error) {
-	useQRZ := config.Get("callbook.qrz", false) != false
-	if !useQRZ {
+func newCallbook(configPath string, config cfg.Configuration, factory callbook.Factory) (callbook.Callbook, error) {
+	useCallbook := config.Get(configPath, false) != false
+	if !useCallbook {
 		return nil, nil
 	}
 
-	username := config.Get("callbook.qrz.username", "").(string)
-	password := config.Get("callbook.qrz.password", "").(string)
+	username := config.Get(configPath+".username", "").(string)
+	password := config.Get(configPath+".password", "").(string)
 	if username == "" || password == "" {
-		return nil, fmt.Errorf("cannot read username or password for qrz.com")
+		return nil, fmt.Errorf("cannot read username or password for %v", configPath)
 	}
-	qrz := callbook.NewQRZ(username, password)
+	return factory(username, password), nil
+}
 
-	return qrz.Lookup(os.Args[1])
+func lookup(callsign string, callbooks map[string]callbook.Callbook) map[string]*callbook.Info {
+	infos := make(map[string]*callbook.Info)
+	for name, callbook := range callbooks {
+		info, err := callbook.Lookup(callsign)
+		if err == nil {
+			infos[name] = info
+		}
+	}
+	return infos
 }
 
 func printInfo(title string, info *callbook.Info) {
