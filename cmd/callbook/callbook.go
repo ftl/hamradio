@@ -1,3 +1,65 @@
+/*
+callbook retrieves information about a given callsign from hamqth.com and qrz.com and prints this information.
+It can also calculate the distance and azimuth from an optionally given maidenhead locator
+to the retrieved location of the callsign.
+
+USAGE
+
+	callbook <callsign> [locator]
+
+EXAMPLE
+
+	> callbook aa7bq em12af
+
+	HamQTH.com
+	==========
+	Callsign AA7BQ
+	Name: Fred
+	QTH: United States
+	Country: United States
+	CQ: 3
+	ITU: 6
+	Time Offset: UTC+7.0
+	Locator: DM43
+	Lat/Lon: (33.66000N, 111.87000W)
+	Distance: 1306.9km
+	Azimuth: 280.7°
+
+	QRZ.com
+	=======
+	Callsign AA7BQ
+	Name: FRED L LLOYD
+	QTH: United States
+	Country: United States
+	CQ: 3
+	ITU: 6
+	Time Offset: UTC-7.0
+	Locator: DM43bq
+	Lat/Lon: (33.69826N, 111.89150W)
+	Distance: 1309.1km
+	Azimuth: 280.9°
+
+CONFIGURATION
+
+	callbook expects the hamradio configuration file (~/.config/hamradio/conf.json) to contain
+	the credentials for hamqth.com and qrz.com. If it can't find the credentials for one
+	of these sites, it will not try to query the respective site.
+
+	The expected JSON structure for the credentials is as follows:
+
+	{
+		"callbook": {
+			"hamqth": {
+				"username": "your hamqth.com username",
+				"password": "your hamqth.com password"
+			},
+			"qrz": {
+				"username": "your qrz.com username",
+				"password": "your qrz.com password"
+			},
+		}
+	}
+*/
 package main
 
 import (
