@@ -15,6 +15,7 @@ package scp
 import (
 	"bufio"
 	"io"
+	"sort"
 	"strings"
 )
 
@@ -56,21 +57,39 @@ func (database Database) Find(s string) ([]string, error) {
 		return []string{}, nil
 	}
 
-	resultEntries := entrySet{}
+	matchSet := make(map[string]match)
+	allMatches := make([]match, 0)
 	for _, b := range fp {
 		entrySet, ok := database.items[b]
 		if !ok {
 			continue
 		}
-		entries := entrySet.Filter(func(e entry) bool {
-			return e.fp.Contains(fp)
+		matches := entrySet.FilterAndMap(func(e entry) interface{} {
+			contains, accuracy := e.fp.Contains(fp)
+			if !contains {
+				return nil
+			}
+			return match{e, accuracy}
 		})
-		resultEntries.Add(entries...)
+		for _, value := range matches {
+			m := value.(match)
+			if _, ok := matchSet[m.s]; !ok {
+				matchSet[m.s] = m
+				allMatches = append(allMatches, m)
+			}
+		}
 	}
 
+	sort.Slice(allMatches, func(i, j int) bool {
+		if allMatches[i].a == allMatches[j].a {
+			return allMatches[i].s < allMatches[j].s
+		}
+		return allMatches[i].a > allMatches[j].a
+	})
+
 	result := make([]string, 0)
-	for _, entry := range resultEntries.Entries() {
-		result = append(result, entry.s)
+	for _, m := range allMatches {
+		result = append(result, m.s)
 	}
 	return result, nil
 }

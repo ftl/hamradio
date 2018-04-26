@@ -1,12 +1,13 @@
 package scp
 
-import (
-	"sort"
-)
-
 type entry struct {
 	s  string
 	fp fingerprint
+}
+
+type match struct {
+	entry
+	a accuracy
 }
 
 func newEntry(s string) entry {
@@ -33,8 +34,15 @@ func (set entrySet) Filter(filter func(e entry) bool) []entry {
 			result = append(result, e)
 		}
 	}
-	sort.Slice(result, func(i, j int) bool {
-		return result[i].s < result[j].s
-	})
+	return result
+}
+
+func (set entrySet) FilterAndMap(filter func(e entry) interface{}) []interface{} {
+	result := make([]interface{}, 0, len(set))
+	for _, e := range set {
+		if value := filter(e); value != nil {
+			result = append(result, value)
+		}
+	}
 	return result
 }

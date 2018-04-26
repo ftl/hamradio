@@ -42,6 +42,28 @@ func TestFingerprint_Similar(t *testing.T) {
 	}
 }
 
+func TestMatchAccuracy(t *testing.T) {
+	testCases := []struct {
+		value1, value2 string
+		expected       accuracy
+	}{
+		{"", "", 1},
+		{"abc", "abc", 1},
+		{"abc", "def", 0},
+		{"def", "abc", 0},
+		{"abc", "bcd", 0},
+		{"abxcd", "bcd", 0.75},
+	}
+	for _, testCase := range testCases {
+		fp1 := extractFingerprint(testCase.value1)
+		fp2 := extractFingerprint(testCase.value2)
+		actual := matchAccuracy(fp1, fp2)
+		if actual != testCase.expected {
+			t.Errorf("%v, %v expected %v, but got %v", fp1, fp2, testCase.expected, actual)
+		}
+	}
+}
+
 func TestFingerprint_Contains(t *testing.T) {
 	testCases := []struct {
 		value1, value2 string
@@ -53,11 +75,12 @@ func TestFingerprint_Contains(t *testing.T) {
 		{"abc", "abcd", false},
 		{"abc", "def", false},
 		{"abc", "bcd", false},
+		{"abxcd", "bcd", true},
 	}
 	for _, testCase := range testCases {
 		fp1 := extractFingerprint(testCase.value1)
 		fp2 := extractFingerprint(testCase.value2)
-		actual := fp1.Contains(fp2)
+		actual, _ := fp1.Contains(fp2)
 		if actual != testCase.expected {
 			t.Errorf("%v, %v expected %t, but got %t", fp1, fp2, testCase.expected, actual)
 		}

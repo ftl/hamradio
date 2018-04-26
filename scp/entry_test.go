@@ -31,17 +31,11 @@ func TestEntrySet(t *testing.T) {
 	if len(entries) != 2 {
 		t.Errorf("should contain 2 entries, but got %d %v", len(entries), entries)
 	}
-	if entries[0].s != "one" {
-		t.Errorf("not sorted with 2 entries: %v", entries)
-	}
 
 	set.Add(e3)
 	entries = set.Entries()
 	if len(entries) != 3 {
 		t.Errorf("should contain 3 entries, but got %d %v", len(entries), entries)
-	}
-	if entries[0].s != "abc" {
-		t.Errorf("not sorted with 3 entries: %v", entries)
 	}
 
 	entries = set.Filter(func(e entry) bool {

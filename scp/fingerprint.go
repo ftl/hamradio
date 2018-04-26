@@ -5,8 +5,13 @@ import (
 )
 
 type similarity float64
+type accuracy float64
 
 type fingerprint []byte
+
+func (fp fingerprint) String() string {
+	return string(fp)
+}
 
 func (fp fingerprint) Equal(other fingerprint) bool {
 	return string(fp) == string(other)
@@ -38,26 +43,44 @@ func (fp fingerprint) Similar(other fingerprint) similarity {
 	return similarity(same) / similarity(all)
 }
 
-func (fp fingerprint) Contains(other fingerprint) bool {
-	if len(fp) < len(other) {
-		return false
+func matchAccuracy(fp1, fp2 fingerprint) accuracy {
+	if len(fp1) < len(fp2) {
+		fp1, fp2 = fp2, fp1
+	} else if len(fp1) == 0 && len(fp2) == 0 {
+		return accuracy(1)
 	}
 
+	matchStart := -1
+	matchEnd := -1
 	fpIndex := 0
-	for i := 0; i < len(other); i++ {
+	for i := 0; i < len(fp2); i++ {
 		foundOther := false
-		for j := fpIndex; j < len(fp); j++ {
-			if other[i] == fp[j] {
+		for j := fpIndex; j < len(fp1); j++ {
+			if fp2[i] == fp1[j] {
 				foundOther = true
+				if i == 0 {
+					matchStart = j
+				}
+				matchEnd = j
 				fpIndex = j
 			}
 		}
 		if !foundOther {
-			return false
+			return accuracy(0)
 		}
 	}
 
-	return true
+	matchLength := (matchEnd - matchStart) + 1
+	return accuracy(len(fp2)) / accuracy(matchLength)
+}
+
+func (fp fingerprint) Contains(other fingerprint) (bool, accuracy) {
+	if len(fp) < len(other) {
+		return false, accuracy(0)
+	}
+
+	accuracy := matchAccuracy(fp, other)
+	return accuracy != 0, accuracy
 }
 
 func extractFingerprint(s string) fingerprint {

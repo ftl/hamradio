@@ -58,6 +58,8 @@ func TestDatabase_Find(t *testing.T) {
 		{"2", []string{}},
 		{"2E", []string{}},
 		{"E0B", []string{"2E0BNI", "2E0BPP"}},
+		{"EBN", []string{"2E0BNI"}},
+		{"2EB", []string{"2E0BNI", "2E0BPP"}},
 		{"E0BN", []string{"2E0BNI"}},
 		{"2E0BNIX", []string{}},
 	}
