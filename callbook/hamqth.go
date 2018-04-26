@@ -28,47 +28,47 @@ func NewHamQTH(username, password string) *HamQTH {
 }
 
 // Lookup looks up information about the given callsign.
-func (h *HamQTH) Lookup(callsign string) (*Info, error) {
-	var response *hamqthResponse
+func (hamqth *HamQTH) Lookup(callsign string) (Info, error) {
+	var response hamqthResponse
 	var err error
 	for retryCount := 0; retryCount < 2; retryCount++ {
-		err = h.login()
+		err = hamqth.login()
 		if err != nil {
-			return &Info{}, err
+			return Info{}, err
 		}
 
-		response, err = h.get(map[string]string{
-			"id":       h.sessionID,
+		response, err = hamqth.get(map[string]string{
+			"id":       hamqth.sessionID,
 			"callsign": callsign,
 			"prg":      "go-hamradio-callbook",
 		})
 		if err != nil && err.Error() == "Session does not exist or expired" {
-			h.sessionID = ""
+			hamqth.sessionID = ""
 			continue
 		} else if err != nil {
-			return &Info{}, err
+			return Info{}, err
 		} else {
 			break
 		}
 	}
 	if err != nil {
-		return &Info{}, err
+		return Info{}, err
 	}
 
 	info, err := hamqthSearchToInfo(response.Search)
 	if err != nil {
-		return &Info{}, err
+		return Info{}, err
 	}
 	return info, nil
 }
 
-func (h *HamQTH) login() error {
-	if h.sessionID != "" {
+func (hamqth *HamQTH) login() error {
+	if hamqth.sessionID != "" {
 		return nil
 	}
-	response, err := h.get(map[string]string{
-		"u": h.Username,
-		"p": h.password,
+	response, err := hamqth.get(map[string]string{
+		"u": hamqth.Username,
+		"p": hamqth.password,
 	})
 	if err != nil {
 		return err
@@ -77,15 +77,15 @@ func (h *HamQTH) login() error {
 	if response.Session == nil || response.Session.SessionID == "" {
 		return fmt.Errorf("failed to get a session ID from hamqth.com")
 	}
-	h.sessionID = response.Session.SessionID
+	hamqth.sessionID = response.Session.SessionID
 
 	return nil
 }
 
-func (h *HamQTH) get(params map[string]string) (*hamqthResponse, error) {
-	request, err := http.NewRequest("GET", h.url, nil)
+func (hamqth HamQTH) get(params map[string]string) (hamqthResponse, error) {
+	request, err := http.NewRequest("GET", hamqth.url, nil)
 	if err != nil {
-		return new(hamqthResponse), err
+		return hamqthResponse{}, err
 	}
 
 	query := request.URL.Query()
@@ -96,24 +96,24 @@ func (h *HamQTH) get(params map[string]string) (*hamqthResponse, error) {
 
 	response, err := httpClient.Do(request)
 	if err != nil {
-		return new(hamqthResponse), err
+		return hamqthResponse{}, err
 	}
 	defer response.Body.Close()
 
 	var buffer bytes.Buffer
 	_, err = buffer.ReadFrom(response.Body)
 	if err != nil {
-		return new(hamqthResponse), err
+		return hamqthResponse{}, err
 	}
 
-	result := new(hamqthResponse)
-	err = xml.Unmarshal(buffer.Bytes(), result)
+	result := hamqthResponse{}
+	err = xml.Unmarshal(buffer.Bytes(), &result)
 	if err != nil {
-		return new(hamqthResponse), err
+		return hamqthResponse{}, err
 	}
 
 	if result.Session != nil && result.Session.Error != "" {
-		return new(hamqthResponse), fmt.Errorf("%v", strings.TrimSpace(result.Session.Error))
+		return hamqthResponse{}, fmt.Errorf("%v", strings.TrimSpace(result.Session.Error))
 	}
 
 	return result, nil
@@ -181,12 +181,12 @@ type hamqthSearch struct {
 	Vimeo            string   `xml:"vimeo"`
 }
 
-func hamqthSearchToInfo(h *hamqthSearch) (*Info, error) {
+func hamqthSearchToInfo(h *hamqthSearch) (Info, error) {
 	var result Info
 	var err error
 	result.Callsign, err = callsign.Parse(h.Callsign)
 	if err != nil {
-		return nil, err
+		return Info{}, err
 	}
 	result.Name = h.Nick
 	result.QTH = h.QTH
@@ -197,5 +197,5 @@ func hamqthSearchToInfo(h *hamqthSearch) (*Info, error) {
 	result.ITUZone, _ = dxcc.ParseITUZone(h.ITUZone)
 	result.TimeOffset, _ = dxcc.ParseTimeOffset(h.UTCOffset)
 
-	return &result, nil
+	return result, nil
 }

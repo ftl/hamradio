@@ -27,7 +27,7 @@ type Info struct {
 
 // Callbook defines the Lookup functionality in a callbook.
 type Callbook interface {
-	Lookup(callsign string) (*Info, error)
+	Lookup(callsign string) (Info, error)
 }
 
 // Factory is a function that creates a new callbook instance from username and password

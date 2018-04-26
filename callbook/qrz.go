@@ -29,13 +29,13 @@ func NewQRZ(username, password string) *QRZ {
 }
 
 // Lookup looks up information about the given callsign.
-func (qrz *QRZ) Lookup(callsign string) (*Info, error) {
-	var response *qrzResponse
+func (qrz *QRZ) Lookup(callsign string) (Info, error) {
+	var response qrzResponse
 	var err error
 	for retryCount := 0; retryCount < 2; retryCount++ {
 		err = qrz.login()
 		if err != nil {
-			return &Info{}, err
+			return Info{}, err
 		}
 
 		response, err = qrz.get(map[string]string{
@@ -47,18 +47,18 @@ func (qrz *QRZ) Lookup(callsign string) (*Info, error) {
 			qrz.sessionID = ""
 			continue
 		} else if err != nil {
-			return &Info{}, err
+			return Info{}, err
 		} else {
 			break
 		}
 	}
 	if err != nil {
-		return &Info{}, err
+		return Info{}, err
 	}
 
 	info, err := qrzCallsignToInfo(response.Callsign)
 	if err != nil {
-		return &Info{}, err
+		return Info{}, err
 	}
 	return info, nil
 }
@@ -83,10 +83,10 @@ func (qrz *QRZ) login() error {
 	return nil
 }
 
-func (qrz *QRZ) get(params map[string]string) (*qrzResponse, error) {
+func (qrz QRZ) get(params map[string]string) (qrzResponse, error) {
 	request, err := http.NewRequest("GET", qrz.url, nil)
 	if err != nil {
-		return new(qrzResponse), err
+		return qrzResponse{}, err
 	}
 
 	query := request.URL.Query()
@@ -97,24 +97,24 @@ func (qrz *QRZ) get(params map[string]string) (*qrzResponse, error) {
 
 	response, err := httpClient.Do(request)
 	if err != nil {
-		return new(qrzResponse), err
+		return qrzResponse{}, err
 	}
 	defer response.Body.Close()
 
 	var buffer bytes.Buffer
 	_, err = buffer.ReadFrom(response.Body)
 	if err != nil {
-		return new(qrzResponse), err
+		return qrzResponse{}, err
 	}
 
-	result := new(qrzResponse)
-	err = xml.Unmarshal(buffer.Bytes(), result)
+	result := qrzResponse{}
+	err = xml.Unmarshal(buffer.Bytes(), &result)
 	if err != nil {
-		return new(qrzResponse), err
+		return qrzResponse{}, err
 	}
 
 	if result.Session != nil && result.Session.Error != "" {
-		return new(qrzResponse), fmt.Errorf("%v", strings.TrimSpace(result.Session.Error))
+		return qrzResponse{}, fmt.Errorf("%v", strings.TrimSpace(result.Session.Error))
 	}
 
 	return result, nil
@@ -213,12 +213,12 @@ func (t qrzTimestamp) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	return nil
 }
 
-func qrzCallsignToInfo(q *qrzCallsign) (*Info, error) {
+func qrzCallsignToInfo(q *qrzCallsign) (Info, error) {
 	var result Info
 	var err error
 	result.Callsign, err = callsign.Parse(q.Callsign)
 	if err != nil {
-		return nil, err
+		return Info{}, err
 	}
 	result.Name = join([]string{q.FirstName, q.LastName}, " ")
 	result.QTH = join([]string{q.Address1, q.Address2}, ", ")
@@ -229,7 +229,7 @@ func qrzCallsignToInfo(q *qrzCallsign) (*Info, error) {
 	result.ITUZone, _ = dxcc.ParseITUZone(q.ITUZone)
 	result.TimeOffset, _ = dxcc.ParseTimeOffset(q.UTCOffset)
 
-	return &result, nil
+	return result, nil
 }
 
 func join(values []string, separator string) string {

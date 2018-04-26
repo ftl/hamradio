@@ -149,8 +149,8 @@ func newCallbook(configPath string, config cfg.Configuration, factory callbook.F
 	return factory(username, password), nil
 }
 
-func lookup(callsign string, callbooks map[string]callbook.Callbook) map[string]*callbook.Info {
-	infos := make(map[string]*callbook.Info)
+func lookup(callsign string, callbooks map[string]callbook.Callbook) map[string]callbook.Info {
+	infos := make(map[string]callbook.Info)
 	for name, callbook := range callbooks {
 		info, err := callbook.Lookup(callsign)
 		if err == nil {
@@ -160,11 +160,7 @@ func lookup(callsign string, callbooks map[string]callbook.Callbook) map[string]
 	return infos
 }
 
-func printInfo(title string, info *callbook.Info) {
-	if info == nil {
-		return
-	}
-
+func printInfo(title string, info callbook.Info) {
 	fmt.Println(title)
 	fmt.Println(strings.Repeat("=", len(title)))
 	fmt.Printf("Callsign %v\n", info.Callsign)
@@ -182,7 +178,7 @@ func printInfo(title string, info *callbook.Info) {
 	}
 }
 
-func printDistanceAzimuth(info *callbook.Info, loc locator.Locator) {
+func printDistanceAzimuth(info callbook.Info, loc locator.Locator) {
 	latLon1 := locator.ToLatLon(loc)
 	var latLon2 *latlon.LatLon
 	if info.LatLon != nil {
