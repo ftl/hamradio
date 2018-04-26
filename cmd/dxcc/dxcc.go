@@ -12,7 +12,6 @@ USAGE
 
 EXAMPLE
 
-
 	> dxcc mz em12af
 
 	Prefix MZ: Shetland Islands (GM/s)
@@ -63,7 +62,7 @@ func main() {
 	}
 	updated, err := dxcc.Update(dxcc.DefaultURL, localFilename)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Printf("update of local copy failed: %v\n", err)
 	}
 	if updated {
 		fmt.Printf("updated local copy: %v\n", localFilename)
