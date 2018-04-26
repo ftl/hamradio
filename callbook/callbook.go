@@ -16,6 +16,7 @@ import (
 type Info struct {
 	Callsign   *callsign.Callsign
 	Name       string
+	Address    string
 	QTH        string
 	Country    string
 	Locator    locator.Locator

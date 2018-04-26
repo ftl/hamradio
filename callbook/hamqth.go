@@ -189,6 +189,7 @@ func hamqthSearchToInfo(h *hamqthSearch) (Info, error) {
 		return Info{}, err
 	}
 	result.Name = h.Nick
+	result.Address = join(", ", h.AdrName, h.AdrStreet1, h.AdrStreet2, h.AdrStreet3, h.AdrZIP, h.AdrCity)
 	result.QTH = h.QTH
 	result.Country = h.Country
 	result.Locator, _ = locator.Parse(h.Grid)

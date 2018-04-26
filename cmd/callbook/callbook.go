@@ -165,6 +165,7 @@ func printInfo(title string, info callbook.Info) {
 	fmt.Println(strings.Repeat("=", len(title)))
 	fmt.Printf("Callsign %v\n", info.Callsign)
 	fmt.Printf("Name: %s\n", info.Name)
+	fmt.Printf("Address: %s\n", info.Address)
 	fmt.Printf("QTH: %s\n", info.Country)
 	fmt.Printf("Country: %s\n", info.Country)
 	fmt.Printf("CQ: %d\n", info.CQZone)

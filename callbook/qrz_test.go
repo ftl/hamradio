@@ -107,7 +107,7 @@ func TestJoin(t *testing.T) {
 		{[]string{"", "", ""}, ""},
 	}
 	for _, testCase := range testCases {
-		actual := join(testCase.value, ", ")
+		actual := join(", ", testCase.value...)
 		if actual != testCase.expected {
 			t.Errorf("expected %q, but got %q", testCase.expected, actual)
 		}

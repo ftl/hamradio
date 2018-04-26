@@ -220,8 +220,9 @@ func qrzCallsignToInfo(q *qrzCallsign) (Info, error) {
 	if err != nil {
 		return Info{}, err
 	}
-	result.Name = join([]string{q.FirstName, q.LastName}, " ")
-	result.QTH = join([]string{q.Address1, q.Address2}, ", ")
+	result.Name = join(" ", q.FirstName, q.LastName)
+	result.Address = join(", ", q.Address1, q.Address2, q.ZIP)
+	result.QTH = join(", ", q.Address1, q.Address2)
 	result.Country = q.Country
 	result.Locator, _ = locator.Parse(q.Grid)
 	result.LatLon, _ = latlon.ParseLatLon(q.Latitude, q.Longitude)
@@ -232,7 +233,7 @@ func qrzCallsignToInfo(q *qrzCallsign) (Info, error) {
 	return result, nil
 }
 
-func join(values []string, separator string) string {
+func join(separator string, values ...string) string {
 	var buffer bytes.Buffer
 	separatorBefore := ""
 	for _, value := range values {
