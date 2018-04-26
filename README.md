@@ -4,6 +4,7 @@ This is a collection of libaries and tools I use to do HF QSOs as DL3NEY:
 * calculate distance and azimuth between locations (given as lat/lon or maidenhead locator)
 * find DXCC information about radio callsign prefixes
 * retrieve information about a radio callsign from [HamQTH.com](https://hamqth.com) and [QRZ.com](https://qrz.com)
+* use the callsign database from [Super Check Partial](http://www.supercheckpartial.com)
 * more to come as I have time and need
 
 The tools are written Go on Linux. They might also work on OsX or Windows, but I did not try that out.
