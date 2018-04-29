@@ -17,6 +17,7 @@ import (
 	"io"
 	"sort"
 	"strings"
+	"sync"
 )
 
 // DefaultURL is the original URL of the MASTER.SCP file: http://www.supercheckpartial.com/MASTER.SCP
@@ -52,44 +53,68 @@ func Read(r io.Reader) (*Database, error) {
 
 // Find all strings in database that partially match the given string
 func (database Database) Find(s string) ([]string, error) {
-	fp := extractFingerprint(s)
-	if len(fp) < 3 {
+	if len(s) < 3 {
 		return []string{}, nil
 	}
+	fp := extractFingerprint(s)
 
-	matchSet := make(map[string]match)
-	allMatches := make([]match, 0)
+	matches := make(chan match, 100)
+	merged := make(chan []match)
+	waiter := &sync.WaitGroup{}
+
+	byteMap := make(map[byte]bool)
 	for _, b := range fp {
+		if byteMap[b] {
+			continue
+		}
+		byteMap[b] = true
 		entrySet, ok := database.items[b]
 		if !ok {
 			continue
 		}
-		matches := entrySet.FilterAndMap(func(e entry) interface{} {
-			contains, accuracy := e.fp.Contains(fp)
-			if !contains {
-				return nil
-			}
-			return match{e, accuracy}
-		})
-		for _, value := range matches {
-			m := value.(match)
-			if _, ok := matchSet[m.s]; !ok {
-				matchSet[m.s] = m
-				allMatches = append(allMatches, m)
-			}
-		}
-	}
 
-	sort.Slice(allMatches, func(i, j int) bool {
-		if allMatches[i].a == allMatches[j].a {
-			return allMatches[i].s < allMatches[j].s
-		}
-		return allMatches[i].a > allMatches[j].a
-	})
+		waiter.Add(1)
+		go findMatches(matches, entrySet, fp, waiter)
+	}
+	go collectMatches(merged, matches)
+
+	waiter.Wait()
+	close(matches)
+	allMatches := <-merged
+	close(merged)
 
 	result := make([]string, 0)
 	for _, m := range allMatches {
 		result = append(result, m.s)
 	}
 	return result, nil
+}
+
+func findMatches(matches chan<- match, entries entrySet, fp fingerprint, waiter *sync.WaitGroup) {
+	defer waiter.Done()
+
+	entries.Do(func(e entry) {
+		contains, accuracy := e.fp.Contains(fp)
+		if contains {
+			matches <- match{e, accuracy}
+		}
+	})
+}
+
+func collectMatches(result chan<- []match, matches <-chan match) {
+	allMatches := make([]match, 0)
+	matchSet := make(map[string]match)
+	for match := range matches {
+		if _, ok := matchSet[match.s]; !ok {
+			matchSet[match.s] = match
+			allMatches = append(allMatches, match)
+		}
+	}
+	sort.Slice(allMatches, func(i, j int) bool {
+		if allMatches[i].a == allMatches[j].a {
+			return allMatches[i].s < allMatches[j].s
+		}
+		return allMatches[i].a > allMatches[j].a
+	})
+	result <- allMatches
 }

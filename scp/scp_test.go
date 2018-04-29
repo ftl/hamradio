@@ -8,7 +8,8 @@ import (
 const testSCP = `# This is a comment
 2E0AOZ
 2E0BNI
-2E0BPP`
+2E0BPP
+N1MM`
 
 func TestDatabase_Read(t *testing.T) {
 	database, err := Read(strings.NewReader(testSCP))
@@ -21,18 +22,20 @@ func TestDatabase_Read(t *testing.T) {
 		length int
 	}{
 		{'0', 3},
+		{'1', 1},
 		{'2', 3},
 		{'A', 1},
 		{'B', 2},
 		{'E', 3},
 		{'I', 1},
-		{'N', 1},
+		{'N', 2},
+		{'M', 1},
 		{'O', 1},
 		{'P', 1},
 		{'Z', 1},
 	}
 	if len(database.items) != len(expectedLengths) {
-		t.Errorf("expected %d bigrams, but got %d", len(expectedLengths), len(database.items))
+		t.Errorf("expected %d buckets, but got %d", len(expectedLengths), len(database.items))
 	}
 	for _, expectedLength := range expectedLengths {
 		if len(database.items[expectedLength.b]) != expectedLength.length {
@@ -61,6 +64,7 @@ func TestDatabase_Find(t *testing.T) {
 		{"EBN", []string{"2E0BNI"}},
 		{"2EB", []string{"2E0BNI", "2E0BPP"}},
 		{"E0BN", []string{"2E0BNI"}},
+		{"NMM", []string{"N1MM"}},
 		{"2E0BNIX", []string{}},
 	}
 

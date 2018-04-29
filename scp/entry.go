@@ -46,3 +46,9 @@ func (set entrySet) FilterAndMap(filter func(e entry) interface{}) []interface{}
 	}
 	return result
 }
+
+func (set entrySet) Do(f func(e entry)) {
+	for _, e := range set {
+		f(e)
+	}
+}
