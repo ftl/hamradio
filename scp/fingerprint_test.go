@@ -53,6 +53,8 @@ func TestMatchAccuracy(t *testing.T) {
 		{"def", "abc", 0},
 		{"abc", "bcd", 0},
 		{"abxcd", "bcd", 0.75},
+		{"ab2nm", "nmm", 0},
+		{"2I0NUM", "nmm", 0},
 	}
 	for _, testCase := range testCases {
 		fp1 := extractFingerprint(testCase.value1)
@@ -76,6 +78,7 @@ func TestFingerprint_Contains(t *testing.T) {
 		{"abc", "def", false},
 		{"abc", "bcd", false},
 		{"abxcd", "bcd", true},
+		{"2e0rnm", "nmm", false},
 	}
 	for _, testCase := range testCases {
 		fp1 := extractFingerprint(testCase.value1)
@@ -83,37 +86,6 @@ func TestFingerprint_Contains(t *testing.T) {
 		actual, _ := fp1.Contains(fp2)
 		if actual != testCase.expected {
 			t.Errorf("%v, %v expected %t, but got %t", fp1, fp2, testCase.expected, actual)
-		}
-	}
-}
-
-func TestNewFingerprint(t *testing.T) {
-	testCases := []struct {
-		value    []byte
-		expected fingerprint
-	}{
-		{
-			[]byte{},
-			fingerprint{},
-		},
-		{
-			[]byte{'a', 'b', 'c'},
-			fingerprint{'a', 'b', 'c'},
-		},
-		{
-			[]byte{'b', 'c', 'a', 'b'},
-			fingerprint{'b', 'c', 'a', 'b'},
-		},
-		{
-			[]byte{'b', 'c', 'a', 'b', 'b', 'c'},
-			fingerprint{'b', 'c', 'a', 'b', 'c'},
-		},
-	}
-
-	for _, testCase := range testCases {
-		actual := newFingerprint(testCase.value...)
-		if !testCase.expected.Equal(actual) {
-			t.Errorf("expected %v, but got %v", testCase.expected, actual)
 		}
 	}
 }
@@ -145,6 +117,7 @@ func TestExtractFingerprint(t *testing.T) {
 		{"abcabc", fingerprint{'A', 'B', 'C', 'A', 'B', 'C'}},
 		{"F/DL1ABC/p", fingerprint{'F', 'D', 'L', '1', 'A', 'B', 'C', 'P'}},
 		{"EA7/DL1ABC/p", fingerprint{'E', 'A', '7', 'D', 'L', '1', 'A', 'B', 'C', 'P'}},
+		{"nmm", fingerprint{'N', 'M', 'M'}},
 	}
 	for _, testCase := range testCases {
 		actual := extractFingerprint(testCase.value)

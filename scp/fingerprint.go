@@ -62,7 +62,8 @@ func matchAccuracy(fp1, fp2 fingerprint) accuracy {
 					matchStart = j
 				}
 				matchEnd = j
-				fpIndex = j
+				fpIndex = j + 1
+				break
 			}
 		}
 		if !foundOther {
@@ -71,6 +72,9 @@ func matchAccuracy(fp1, fp2 fingerprint) accuracy {
 	}
 
 	matchLength := (matchEnd - matchStart) + 1
+	if matchLength < len(fp2) {
+		return accuracy(0)
+	}
 	return accuracy(len(fp2)) / accuracy(matchLength)
 }
 
@@ -84,27 +88,14 @@ func (fp fingerprint) Contains(other fingerprint) (bool, accuracy) {
 }
 
 func extractFingerprint(s string) fingerprint {
-	bytes := make([]byte, len(s))
+	bytes := make([]byte, 0)
 	for _, b := range []byte(strings.ToUpper(s)) {
 		if !isCallsignChar(b) {
 			continue
 		}
 		bytes = append(bytes, b)
 	}
-	return newFingerprint(bytes...)
-}
-
-func newFingerprint(bytes ...byte) fingerprint {
-	normalized := fingerprint{}
-	var last byte
-	for _, b := range bytes {
-		if last == b {
-			continue
-		}
-		normalized = append(normalized, b)
-		last = b
-	}
-	return normalized
+	return fingerprint(bytes)
 }
 
 func isCallsignChar(b byte) bool {
