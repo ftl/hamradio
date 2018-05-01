@@ -100,7 +100,6 @@ func (client *Client) communicate() {
 	for {
 		select {
 		case _ = <-client.disconnected:
-			log.Printf("disconnected")
 			return
 		case message := <-client.sendBuffer:
 			err := client.send(message)
