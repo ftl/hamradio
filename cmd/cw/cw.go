@@ -36,6 +36,7 @@ func main() {
 	commands := map[string]commandFunc{
 		"send":  send,
 		"speed": speed,
+		"tune":  tune,
 	}
 
 	client, err := cwclient.NewDefault()
@@ -84,8 +85,21 @@ func speed(client *cwclient.Client) {
 
 	speed, err := strconv.Atoi(os.Args[2])
 	if err != nil {
-		log.Fatalf("%v is not a valid speed value, it must be a number between 5 and 60", os.Args[3])
+		log.Fatalf("%v is not a valid speed value, it must be a number between 5 and 60", os.Args[2])
 	}
 
 	client.Speed(speed)
+}
+
+func tune(client *cwclient.Client) {
+	if len(os.Args) != 3 {
+		printUsage()
+	}
+
+	duration, err := strconv.Atoi(os.Args[2])
+	if err != nil {
+		log.Fatalf("%v is not a valid duration value, it must be a number between 0 and 10", os.Args[2])
+	}
+
+	client.Tune(duration)
 }
