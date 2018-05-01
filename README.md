@@ -8,10 +8,10 @@ This is a collection of libaries and tools I use to do HF QSOs as DL3NEY:
 * talk to the [cwdaemon](https://github.com/acerion/cwdaemon) to output CW on your transceiver: [cw](./cmd/cw)
 * more to come as I have time and need
 
-The tools are written Go on Linux. They might also work on OsX or Windows, but I did not try that out.
+The tools are written Go on Linux. They might also work on OSX or Windows, but I did not try that out.
 
 ## Disclaimer
-I develop these tools for myself and just for fun in my free time. If you find it useful, I'm happy to hear about that. If you have trouble using it, you have all the source code to fix the problem yourself (although pull requests are welcome).
+I develop these tools for myself and just for fun in my free time. If you find them useful, I'm happy to hear about that. If you have trouble using them, you have all the source code to fix the problem yourself (although pull requests are welcome).
 
 ## Links
 * [Wiki](https://github.com/ftl/hamradio/wiki)
