@@ -225,7 +225,8 @@ func qrzCallsignToInfo(q *qrzCallsign) (Info, error) {
 	result.QTH = join(", ", q.Address1, q.Address2)
 	result.Country = q.Country
 	result.Locator, _ = locator.Parse(q.Grid)
-	result.LatLon, _ = latlon.ParseLatLon(q.Latitude, q.Longitude)
+	result.LatLon, err = latlon.ParseLatLon(q.Latitude, q.Longitude)
+	result.LatLonValid = err == nil
 	result.CQZone, _ = dxcc.ParseCQZone(q.CQZone)
 	result.ITUZone, _ = dxcc.ParseITUZone(q.ITUZone)
 	result.TimeOffset, _ = dxcc.ParseTimeOffset(q.UTCOffset)

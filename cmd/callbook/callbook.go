@@ -174,15 +174,15 @@ func printInfo(title string, info callbook.Info) {
 	if !info.Locator.IsZero() {
 		fmt.Printf("Locator: %v\n", info.Locator)
 	}
-	if info.LatLon != nil {
+	if info.LatLonValid {
 		fmt.Printf("Lat/Lon: %v\n", info.LatLon)
 	}
 }
 
 func printDistanceAzimuth(info callbook.Info, loc locator.Locator) {
 	latLon1 := locator.ToLatLon(loc)
-	var latLon2 *latlon.LatLon
-	if info.LatLon != nil {
+	var latLon2 latlon.LatLon
+	if info.LatLonValid {
 		latLon2 = info.LatLon
 	} else if !info.Locator.IsZero() {
 		latLon2 = locator.ToLatLon(info.Locator)

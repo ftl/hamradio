@@ -102,14 +102,14 @@ func normalizeLon(lon Longitude) Longitude {
 }
 
 // ParseLatLon parses a latitude and longitude from two strings and returns the parsed data as LatLon.
-func ParseLatLon(latString, lonString string) (*LatLon, error) {
+func ParseLatLon(latString, lonString string) (LatLon, error) {
 	lat, err := ParseLat(strings.TrimSpace(latString))
 	if err != nil {
-		return &LatLon{}, err
+		return LatLon{}, err
 	}
 	lon, err := ParseLon(strings.TrimSpace(lonString))
 	if err != nil {
-		return &LatLon{}, err
+		return LatLon{}, err
 	}
 
 	return NewLatLon(lat, lon), nil
@@ -139,14 +139,14 @@ func normalizeDegrees(d Degrees) Degrees {
 
 // NewLatLon creates a new pair of coordinates. It normalizes the given latitude
 // and longitude.
-func NewLatLon(lat Latitude, lon Longitude) *LatLon {
-	return &LatLon{normalizeLat(lat), normalizeLon(lon)}
+func NewLatLon(lat Latitude, lon Longitude) LatLon {
+	return LatLon{normalizeLat(lat), normalizeLon(lon)}
 }
 
 // Distance calculates the great circle distance between two coordinates
 // in kilometers using the haversine formula.
 // See http://www.movable-type.co.uk/scripts/latlong.html for more details.
-func Distance(latLon1, latLon2 *LatLon) Km {
+func Distance(latLon1, latLon2 LatLon) Km {
 	const radius = 6371.0 // km
 	φ1 := radians(float64(latLon1.Lat))
 	φ2 := radians(float64(latLon2.Lat))
@@ -161,7 +161,7 @@ func Distance(latLon1, latLon2 *LatLon) Km {
 
 // Azimuth calculates the azimuth between two coordinates in degrees.
 // See http://www.movable-type.co.uk/scripts/latlong.html for more details.
-func Azimuth(latLon1, latLon2 *LatLon) Degrees {
+func Azimuth(latLon1, latLon2 LatLon) Degrees {
 	φ1 := radians(float64(latLon1.Lat))
 	φ2 := radians(float64(latLon2.Lat))
 	Δλ := radians(float64(latLon2.Lon - latLon1.Lon))

@@ -123,6 +123,6 @@ func printPrefix(prefix *dxcc.Prefix) {
 
 func printDistanceAzimuth(prefix *dxcc.Prefix, loc locator.Locator) {
 	latLon := locator.ToLatLon(loc)
-	fmt.Printf("Distance: %v\n", latlon.Distance(latLon, &prefix.LatLon))
-	fmt.Printf("Azimuth: %v\n", latlon.Azimuth(latLon, &prefix.LatLon))
+	fmt.Printf("Distance: %v\n", latlon.Distance(latLon, prefix.LatLon))
+	fmt.Printf("Azimuth: %v\n", latlon.Azimuth(latLon, prefix.LatLon))
 }

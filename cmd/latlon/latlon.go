@@ -48,8 +48,8 @@ func main() {
 	latLon1 := latlon.LatLon{Lat: lat1, Lon: lon1}
 	latLon2 := latlon.LatLon{Lat: lat2, Lon: lon2}
 
-	distance := latlon.Distance(&latLon1, &latLon2)
-	azimuth := latlon.Azimuth(&latLon1, &latLon2)
+	distance := latlon.Distance(latLon1, latLon2)
+	azimuth := latlon.Azimuth(latLon1, latLon2)
 
 	fmt.Printf("Distance: %v, Azimuth: %v\n", distance, azimuth)
 }

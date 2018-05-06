@@ -14,16 +14,17 @@ import (
 
 // Info contains the information from a callbook service about a callsign.
 type Info struct {
-	Callsign   *callsign.Callsign
-	Name       string
-	Address    string
-	QTH        string
-	Country    string
-	Locator    locator.Locator
-	LatLon     *latlon.LatLon
-	CQZone     dxcc.CQZone
-	ITUZone    dxcc.ITUZone
-	TimeOffset dxcc.TimeOffset
+	Callsign    *callsign.Callsign
+	Name        string
+	Address     string
+	QTH         string
+	Country     string
+	Locator     locator.Locator
+	LatLon      latlon.LatLon
+	LatLonValid bool
+	CQZone      dxcc.CQZone
+	ITUZone     dxcc.ITUZone
+	TimeOffset  dxcc.TimeOffset
 }
 
 // Callbook defines the Lookup functionality in a callbook.

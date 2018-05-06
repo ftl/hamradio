@@ -134,7 +134,7 @@ func TestParseLon(t *testing.T) {
 
 func TestDistance(t *testing.T) {
 	testCases := []struct {
-		value1, value2 *LatLon
+		value1, value2 LatLon
 		expected       int
 	}{
 		{NewLatLon(23.4, 23.4), NewLatLon(-23.4, -23.4), 7254},
@@ -150,7 +150,7 @@ func TestDistance(t *testing.T) {
 
 func TestAzimuth(t *testing.T) {
 	testCases := []struct {
-		value1, value2 *LatLon
+		value1, value2 LatLon
 		expected       int
 	}{
 		{NewLatLon(23.4, 23.4), NewLatLon(-23.4, -23.4), 227},

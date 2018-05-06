@@ -79,7 +79,7 @@ func TestToLatLon(t *testing.T) {
 
 func TestLatLonToLocator(t *testing.T) {
 	testCases := []struct {
-		value    *latlon.LatLon
+		value    latlon.LatLon
 		expected string
 	}{
 		{latlon.NewLatLon(45, -70), "FN"},

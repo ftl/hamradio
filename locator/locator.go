@@ -52,7 +52,7 @@ func (l Locator) IsZero() bool {
 
 // ToLatLon converts a maidenhead locator into a pair of latitude and longitude coordinates.
 // The coordinates represent the center of the square with the given precision of the locator.
-func ToLatLon(locator Locator) *latlon.LatLon {
+func ToLatLon(locator Locator) latlon.LatLon {
 	lonPrecision := 0
 	lon := latlon.Longitude(locator[0]-'A') * 20.0
 	if locator[2] > 0 {
@@ -110,7 +110,7 @@ func ToLatLon(locator Locator) *latlon.LatLon {
 // LatLonToLocator converts latitude and longitude into a maidenhead locator of the given length.
 // The length must be 2, 4, 6, or 8. The returned locator describes a square of the desired precision
 // that contains the given coordinates.
-func LatLonToLocator(latLon *latlon.LatLon, length int) Locator {
+func LatLonToLocator(latLon latlon.LatLon, length int) Locator {
 	if length%2 == 1 || length < 2 || length > 8 {
 		panic("The length of a maidenhead locator must be 2, 4, 6, or 8!")
 	}

@@ -125,7 +125,7 @@ func parseLatLon(latString, lonString string) (latlon.LatLon, error) {
 		return latlon.LatLon{}, err
 	}
 
-	return *latlon.NewLatLon(lat, lon*-1), nil
+	return latlon.NewLatLon(lat, lon*-1), nil
 }
 
 // ParseTimeOffset parses the time offset information from a string.

@@ -193,7 +193,8 @@ func hamqthSearchToInfo(h *hamqthSearch) (Info, error) {
 	result.QTH = h.QTH
 	result.Country = h.Country
 	result.Locator, _ = locator.Parse(h.Grid)
-	result.LatLon, _ = latlon.ParseLatLon(h.Latitude, h.Longitude)
+	result.LatLon, err = latlon.ParseLatLon(h.Latitude, h.Longitude)
+	result.LatLonValid = err == nil
 	result.CQZone, _ = dxcc.ParseCQZone(h.CQZone)
 	result.ITUZone, _ = dxcc.ParseITUZone(h.ITUZone)
 	result.TimeOffset, _ = dxcc.ParseTimeOffset(h.UTCOffset)
