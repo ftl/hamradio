@@ -50,6 +50,7 @@ import (
 	"os/user"
 	"path/filepath"
 
+	"github.com/ftl/hamradio/cfg"
 	"github.com/ftl/hamradio/dxcc"
 	"github.com/ftl/hamradio/latlon"
 	"github.com/ftl/hamradio/locator"
@@ -78,8 +79,16 @@ func main() {
 		os.Exit(0)
 	}
 
+	config, err := cfg.LoadDefault()
+	if err != nil {
+		log.Fatalf("cannot load configuration file: %v", err)
+	}
+
 	foundPrefixes, _ := prefixes.Find(os.Args[1])
 	loc, useLocator := parseLocator()
+	if !useLocator {
+		loc, useLocator = loadLocator(config)
+	}
 	for _, prefix := range foundPrefixes {
 		printPrefix(prefix)
 		if useLocator {
@@ -105,6 +114,17 @@ func parseLocator() (locator.Locator, bool) {
 	loc, err := locator.Parse(os.Args[2])
 	if err != nil {
 		fmt.Printf("cannot parse locator: %v\n", err)
+		return locator.Locator{}, false
+	}
+	return loc, true
+}
+
+func loadLocator(config cfg.Configuration) (locator.Locator, bool) {
+	value := config.Get(cfg.MyLocator, "").(string)
+
+	loc, err := locator.Parse(value)
+	if err != nil {
+		fmt.Printf("cannot load locator: %v\n", err)
 		return locator.Locator{}, false
 	}
 	return loc, true

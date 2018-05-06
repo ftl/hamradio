@@ -80,11 +80,15 @@ func main() {
 		fmt.Printf("usage: %s <callsign> [locator]\n", filepath.Base(os.Args[0]))
 		os.Exit(0)
 	}
-	locator, useLocator := parseLocator()
 
 	config, err := cfg.LoadDefault()
 	if err != nil {
 		log.Fatalf("cannot load configuration file: %v", err)
+	}
+
+	locator, useLocator := parseLocator()
+	if !useLocator {
+		locator, useLocator = loadLocator(config)
 	}
 
 	callbooks := loadCallbooks(config)
@@ -107,6 +111,17 @@ func parseLocator() (locator.Locator, bool) {
 	loc, err := locator.Parse(os.Args[2])
 	if err != nil {
 		fmt.Printf("cannot parse locator: %v\n", err)
+		return locator.Locator{}, false
+	}
+	return loc, true
+}
+
+func loadLocator(config cfg.Configuration) (locator.Locator, bool) {
+	value := config.Get(cfg.MyLocator, "").(string)
+
+	loc, err := locator.Parse(value)
+	if err != nil {
+		fmt.Printf("cannot load locator: %v\n", err)
 		return locator.Locator{}, false
 	}
 	return loc, true
