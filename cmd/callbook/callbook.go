@@ -114,20 +114,20 @@ func parseLocator() (locator.Locator, bool) {
 
 func loadCallbooks(config cfg.Configuration) map[string]callbook.Callbook {
 	params := []struct {
-		name       string
-		configPath string
-		factory    callbook.Factory
+		name      string
+		configKey cfg.Key
+		factory   callbook.Factory
 	}{
-		{"HamQTH.com", "callbook.hamqth", func(username, password string) callbook.Callbook {
+		{"HamQTH.com", cfg.Key("callbook.hamqth"), func(username, password string) callbook.Callbook {
 			return callbook.NewHamQTH(username, password)
 		}},
-		{"QRZ.com", "callbook.qrz", func(username, password string) callbook.Callbook {
+		{"QRZ.com", cfg.Key("callbook.qrz"), func(username, password string) callbook.Callbook {
 			return callbook.NewQRZ(username, password)
 		}},
 	}
 	callbooks := make(map[string]callbook.Callbook)
 	for _, param := range params {
-		callbook, err := newCallbook(param.configPath, config, param.factory)
+		callbook, err := newCallbook(param.configKey, config, param.factory)
 		if err == nil {
 			callbooks[param.name] = callbook
 		}
@@ -135,7 +135,7 @@ func loadCallbooks(config cfg.Configuration) map[string]callbook.Callbook {
 	return callbooks
 }
 
-func newCallbook(configPath string, config cfg.Configuration, factory callbook.Factory) (callbook.Callbook, error) {
+func newCallbook(configPath cfg.Key, config cfg.Configuration, factory callbook.Factory) (callbook.Callbook, error) {
 	useCallbook := config.Get(configPath, false) != false
 	if !useCallbook {
 		return nil, nil

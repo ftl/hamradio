@@ -26,6 +26,15 @@ const DefaultDirectory = "~/.config/hamradio"
 // relative to the configuration directory.
 const DefaultFilename = "conf.json"
 
+// Key names
+type Key string
+
+// Some commonly used parameters.
+const (
+	MyCall    Key = "my.call"
+	MyLocator Key = "my.locator"
+)
+
 // Directory returns the path of the configuration directory as absolute path. If the given
 // path is the empty string, the default directory is returned.
 func Directory(path string) (string, error) {
@@ -121,10 +130,10 @@ func Read(in io.Reader) (Configuration, error) {
 
 // Get retrieves the value at the given path in the configuration data. If the key path
 // cannot be found, the given default value is returned.
-func (config Configuration) Get(keyPath string, defaultValue interface{}) interface{} {
-	elements := strings.Split(keyPath, ".")
+func (config Configuration) Get(key Key, defaultValue interface{}) interface{} {
+	elements := strings.Split(string(key), ".")
 	path := elements[:len(elements)-1]
-	key := elements[len(elements)-1]
+	nodeName := elements[len(elements)-1]
 	currentNode := config
 	for _, element := range path {
 		nextNode := currentNode[element]
@@ -135,7 +144,7 @@ func (config Configuration) Get(keyPath string, defaultValue interface{}) interf
 			return defaultValue
 		}
 	}
-	if value, exists := currentNode[key]; exists {
+	if value, exists := currentNode[nodeName]; exists {
 		return value
 	}
 	return defaultValue
