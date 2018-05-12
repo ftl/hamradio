@@ -14,7 +14,7 @@ import (
 
 // Info contains the information from a callbook service about a callsign.
 type Info struct {
-	Callsign    *callsign.Callsign
+	Callsign    callsign.Callsign
 	Name        string
 	Address     string
 	QTH         string

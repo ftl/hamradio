@@ -29,8 +29,8 @@ func TestParse(t *testing.T) {
 				t.Errorf("parsing failed: %v", err)
 				continue
 			}
-			if *actual != testCase.expected {
-				t.Errorf("expected %v, but got %v", testCase.expected, *actual)
+			if actual != testCase.expected {
+				t.Errorf("expected %v, but got %v", testCase.expected, actual)
 			}
 		} else {
 			if err == nil {
