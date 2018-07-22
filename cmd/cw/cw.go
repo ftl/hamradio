@@ -48,6 +48,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("cannot connect to cwdaemon: %v", err)
 	}
+	defer client.Disconnect()
 
 	if len(os.Args) == 1 {
 		printUsage()
@@ -58,8 +59,6 @@ func main() {
 	} else {
 		printUsage()
 	}
-
-	defer client.Disconnect()
 }
 
 func printUsage() {
