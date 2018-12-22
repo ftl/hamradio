@@ -149,3 +149,19 @@ func (config Configuration) Get(key Key, defaultValue interface{}) interface{} {
 	}
 	return defaultValue
 }
+
+// GetStrings retrieves the value at the given path as string slice. If the key path
+// cannot be found, the given default value is returned.
+func (config Configuration) GetStrings(key Key, defaultValue []string) []string {
+	rawValues := config.Get(key, nil)
+	if rawValues == nil {
+		return defaultValue
+	}
+	values := rawValues.([]interface{})
+
+	result := make([]string, len(values))
+	for i, value := range values {
+		result[i] = value.(string)
+	}
+	return result
+}
