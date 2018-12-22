@@ -53,9 +53,13 @@ const (
 )
 
 // New creates a new Client for a cwdaemon server running on the given hostname and port.
-// If the hostname is empty, localhost will be used.
+// If the hostname is empty, localhost will be used. If the port is 0, the default port 6789 will be used.
 func New(hostname string, port int) (*Client, error) {
 	client := Client{}
+
+	if port == 0 {
+		port = 6789
+	}
 
 	localAddr, err := net.ResolveUDPAddr("udp", ":0")
 	if err != nil {
@@ -77,7 +81,7 @@ func New(hostname string, port int) (*Client, error) {
 
 // NewDefault returns a Client for a cwdaemon server running on localhost:6789.
 func NewDefault() (*Client, error) {
-	return New("", 6789)
+	return New("", 0)
 }
 
 // Connect sets up a connection between the client and the server.
