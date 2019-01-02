@@ -27,6 +27,15 @@ var callsignWorkingConditions = map[string]bool{
 	"AM": true,
 }
 
+// MustParse parses a callsign from a string. The function panics if the parsing fails.
+func MustParse(s string) Callsign {
+	result, err := Parse(s)
+	if err != nil {
+		panic(err)
+	}
+	return result
+}
+
 // Parse parses a callsign from a string.
 func Parse(s string) (Callsign, error) {
 	normalString := strings.ToUpper(strings.TrimSpace(s))
