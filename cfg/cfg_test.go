@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestDirectory(t *testing.T) {
@@ -100,4 +102,27 @@ func TestConfiguration_Get(t *testing.T) {
 	if nonExistingPath != 123 {
 		t.Errorf("failed to get default value for non-existing path, got %v", nonExistingPath)
 	}
+}
+
+func TestConfiguration_GetSlice(t *testing.T) {
+	config, err := Load("./testdata", "")
+	if err != nil {
+		t.Errorf("faild to load test config file: %v", err)
+		t.FailNow()
+	}
+
+	expected := map[string]string{
+		"1": "one",
+		"2": "two",
+		"3": "three",
+	}
+
+	result := make(map[string]string)
+	config.GetSlice("arraynode", func(_ int, e map[string]interface{}) {
+		value := e["value"].(string)
+		label := e["label"].(string)
+		result[value] = label
+	})
+
+	assert.Equal(t, expected, result)
 }

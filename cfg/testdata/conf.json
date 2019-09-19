@@ -4,5 +4,10 @@
         "subnode": {
             "key": "value"
         }
-    }
+    },
+    "arraynode": [
+        {"value": "1", "label": "one"},
+        {"value": "2", "label": "two"},
+        {"value": "3", "label": "three"}
+    ]
 }

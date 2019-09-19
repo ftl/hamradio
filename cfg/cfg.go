@@ -165,3 +165,20 @@ func (config Configuration) GetStrings(key Key, defaultValue []string) []string 
 	}
 	return result
 }
+
+// GetSlice retrieves the value at the given path as array. It iterates over its elements and calls the given callback for each element.
+func (config Configuration) GetSlice(key Key, readElement func(int, map[string]interface{})) {
+	rawValues := config.Get(key, nil)
+	if rawValues == nil {
+		return
+	}
+	values := rawValues.([]interface{})
+
+	for i, rawValue := range values {
+		value, ok := rawValue.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		readElement(i, value)
+	}
+}
