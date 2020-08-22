@@ -23,6 +23,9 @@ import (
 // DefaultURL is the original URL of the MASTER.SCP file: http://www.supercheckpartial.com/MASTER.SCP
 const DefaultURL = "http://www.supercheckpartial.com/MASTER.SCP"
 
+// DefaultLocalFilename is the default name for the file that is used to store the contents of MASTER.SCP locally in the user's home directory.
+const DefaultLocalFilename = ".config/hamradio/MASTER.SCP"
+
 // Database represents the SCP database.
 type Database struct {
 	items map[byte]entrySet

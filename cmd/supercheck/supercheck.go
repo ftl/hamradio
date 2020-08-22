@@ -25,7 +25,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/user"
 	"path/filepath"
 	"strings"
 
@@ -33,7 +32,7 @@ import (
 )
 
 func main() {
-	localFilename, err := localFilename()
+	localFilename, err := scp.LocalFilename()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -61,12 +60,4 @@ func main() {
 	}
 
 	fmt.Println(strings.Join(matches, " "))
-}
-
-func localFilename() (string, error) {
-	usr, err := user.Current()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(usr.HomeDir, ".config/hamradio/MASTER.SCP"), nil
 }

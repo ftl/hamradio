@@ -2,6 +2,8 @@ package scp
 
 import (
 	"io"
+	"os/user"
+	"path/filepath"
 
 	"github.com/ftl/localcopy"
 )
@@ -41,4 +43,13 @@ func Update(remoteURL, localFilename string) (bool, error) {
 	return localcopy.Update(remoteURL, localFilename, func(r io.Reader) (interface{}, error) {
 		return Read(r)
 	})
+}
+
+// LocalFilename returns the absolute path of the default local filename in the current user's home directory.
+func LocalFilename() (string, error) {
+	usr, err := user.Current()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(usr.HomeDir, DefaultLocalFilename), nil
 }
