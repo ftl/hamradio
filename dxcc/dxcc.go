@@ -10,6 +10,9 @@ import (
 // DefaultURL is the original URL of the cty.dat file: http://www.country-files.com/cty/cty.dat
 const DefaultURL = "http://www.country-files.com/cty/cty.dat"
 
+// DefaultLocalFilename is the default name for the file that is used to store the contents of cty.dat locally in the user's home directory.
+const DefaultLocalFilename = ".config/hamradio/cty.dat"
+
 // Prefixes contains all DXCC prefixes.
 type Prefixes struct {
 	items map[string][]*Prefix

@@ -47,7 +47,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/user"
 	"path/filepath"
 
 	"github.com/ftl/hamradio/cfg"
@@ -57,7 +56,7 @@ import (
 )
 
 func main() {
-	localFilename, err := localFilename()
+	localFilename, err := dxcc.LocalFilename()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -96,14 +95,6 @@ func main() {
 		}
 		fmt.Println()
 	}
-}
-
-func localFilename() (string, error) {
-	usr, err := user.Current()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(usr.HomeDir, ".config/hamradio/cty.dat"), nil
 }
 
 func parseLocator() (locator.Locator, bool) {
