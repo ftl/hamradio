@@ -15,19 +15,20 @@ import (
 	"math"
 	"net"
 	"strings"
+	"sync"
 	"time"
 )
 
 // Client is a client for the cwdaemon server application.
 type Client struct {
-	localAddr     *net.UDPAddr
-	remoteAddr    *net.UDPAddr
-	connection    *net.UDPConn
-	receiveBuffer []byte
-	sendBuffer    chan string
-	disconnected  chan struct{}
-	inCount       int
-	outCount      int
+	localAddr      *net.UDPAddr
+	remoteAddr     *net.UDPAddr
+	connection     *net.UDPConn
+	connectionLock *sync.Mutex
+	receiveBuffer  []byte
+	sendBuffer     chan interface{}
+	disconnected   chan struct{}
+	sendQueue      *sendQueue
 }
 
 // Soundsystem supported by the cwdaemon
@@ -55,7 +56,12 @@ const (
 // New creates a new Client for a cwdaemon server running on the given hostname and port.
 // If the hostname is empty, localhost will be used. If the port is 0, the default port 6789 will be used.
 func New(hostname string, port int) (*Client, error) {
-	client := Client{}
+	client := Client{
+		connectionLock: new(sync.Mutex),
+		receiveBuffer:  make([]byte, 32),
+		sendBuffer:     make(chan interface{}),
+		sendQueue:      newSendQueue(),
+	}
 
 	if port == 0 {
 		port = 6789
@@ -72,9 +78,8 @@ func New(hostname string, port int) (*Client, error) {
 	}
 	client.remoteAddr = remoteAddr
 
-	client.receiveBuffer = make([]byte, 32)
-	client.sendBuffer = make(chan string)
 	client.disconnected = make(chan struct{})
+	close(client.disconnected)
 
 	return &client, nil
 }
@@ -86,7 +91,10 @@ func NewDefault() (*Client, error) {
 
 // Connect sets up a connection between the client and the server.
 func (client *Client) Connect() error {
-	if client.connection != nil {
+	client.connectionLock.Lock()
+	defer client.connectionLock.Unlock()
+
+	if client.IsConnected() {
 		return nil
 	}
 
@@ -95,6 +103,8 @@ func (client *Client) Connect() error {
 		return err
 	}
 	client.connection = connection
+	client.disconnected = make(chan struct{})
+
 	go client.communicate()
 
 	return nil
@@ -104,50 +114,67 @@ func (client *Client) communicate() {
 	for {
 		select {
 		case _ = <-client.disconnected:
+			client.sendQueue.Reset()
 			return
-		case message := <-client.sendBuffer:
-			err := client.send(message)
+		case m := <-client.sendBuffer:
+			var err error
+			switch message := m.(type) {
+			case string:
+				err = client.send(message)
+			case syncText:
+				token := client.sendQueue.Enqueue()
+				err = client.send(fmt.Sprintf("\x1Bh%d", token), message.text)
+			default:
+				panic(fmt.Errorf("unknown send message type: %T", m))
+			}
 			if err != nil {
-				log.Printf("error sending %v: %v", message, err)
+				log.Printf("Error sending %v: %T %v", m, err, err)
+				client.sendQueue.Reset()
+				// client.handleConnectionError()
 			}
 		default:
 			message, err := client.receive()
 			if err != nil {
-				log.Printf("error receiving: %v", err)
+				log.Printf("Error receiving: %T %v", err, err)
+				// client.handleConnectionError()
+				continue
 			}
 			if message == "" {
 				continue
 			}
 			switch {
 			case strings.HasPrefix(message, "h"):
-				_, err := fmt.Sscanf(message, "h%d", &client.inCount)
+				var token int
+				_, err := fmt.Sscanf(message, "h%d", &token)
 				if err != nil {
-					log.Printf("error parsing sequence number %v: %v", message, err)
+					log.Printf("Error parsing sequence number %v: %v", message, err)
 				}
+				client.sendQueue.Finish(token)
 			case message == "break":
-				log.Printf("CW output aborted at %d/%d", client.inCount, client.outCount)
-				client.inCount = 0
-				client.outCount = 0
+				finished, total := client.sendQueue.Current()
+				log.Printf("CW output aborted at %d/%d", finished, total)
+				client.sendQueue.Reset()
 			}
 		}
 	}
 }
 
-func (client *Client) send(s string) error {
-	if client.connection == nil {
-		return fmt.Errorf("client not connected")
-	}
+type syncText struct {
+	text string
+}
 
-	buf := []byte(s)
-	_, err := client.connection.Write(buf)
-	return err
+func (client *Client) send(messages ...string) error {
+	for _, message := range messages {
+		buf := []byte(message)
+		_, err := client.connection.Write(buf)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (client *Client) receive() (string, error) {
-	if client.connection == nil {
-		return "", fmt.Errorf("client not connected")
-	}
-
 	client.connection.SetReadDeadline(time.Now().Add(100 * time.Millisecond))
 	n, err := client.connection.Read(client.receiveBuffer)
 	if err, ok := err.(net.Error); ok {
@@ -163,35 +190,61 @@ func (client *Client) receive() (string, error) {
 	return strings.TrimSpace(string(message)), nil
 }
 
+func (client *Client) handleConnectionError() {
+	select {
+	case <-client.disconnected:
+	default:
+		close(client.disconnected)
+	}
+}
+
 // Disconnect closes the connection between the client and the server.
 func (client *Client) Disconnect() {
-	if client.connection == nil {
+	select {
+	case <-client.disconnected:
 		return
+	default:
 	}
-	defer client.connection.Close()
-	client.disconnected <- struct{}{}
-	client.connection = nil
+	client.connectionLock.Lock()
+	defer client.connectionLock.Unlock()
+
+	client.connection.Close()
+	select {
+	case <-client.disconnected:
+	default:
+		close(client.disconnected)
+	}
 }
 
 // IsConnected indicates if the client has an active connection to the server.
 func (client *Client) IsConnected() bool {
-	return client.connection != nil
+	select {
+	case <-client.disconnected:
+		return false
+	default:
+		return true
+	}
 }
 
 // IsIdle returns true if there are no texts waiting on the server for output as CW.
 func (client *Client) IsIdle() bool {
-	return client.inCount == client.outCount
+	return client.sendQueue.Idle()
 }
 
 // Wait waits for all pending text to be output as CW.
 func (client *Client) Wait() {
-	for !client.IsIdle() {
+	for !client.IsIdle() && client.IsConnected() {
 		time.Sleep(100 * time.Millisecond)
 	}
 }
 
 func (client *Client) command(format string, values ...interface{}) {
-	client.sendBuffer <- fmt.Sprintf("\x1B%s", fmt.Sprintf(format, values...))
+	command := fmt.Sprintf("\x1B%s", fmt.Sprintf(format, values...))
+	if !client.IsConnected() {
+		log.Printf("Cannot send command %q, the client is not connected. Reconnect and try again.", command)
+		return
+	}
+	client.sendBuffer <- command
 }
 
 // Reset resets the server to the default values:
@@ -291,11 +344,61 @@ func (client *Client) Volume(volume int) {
 
 // Send sends the given text to the server to be output it as CW.
 func (client *Client) Send(text string) {
+	if !client.IsConnected() {
+		log.Printf("Cannot send %q, the client is not connected. Reconnect and try again.", text)
+	}
 	if strings.HasPrefix(text, "\x1B") {
-		log.Panicf("cannot send escape sequence %s, use the dedicated methods for that", text[1:])
+		log.Panicf("Cannot send escape sequence %s, use the dedicated methods for that.", text[1:])
 	}
 
-	client.outCount++
-	client.command("h%d", client.outCount)
-	client.sendBuffer <- text
+	client.sendBuffer <- syncText{text}
+}
+
+type sendQueue struct {
+	queued, finished int
+	lock             *sync.RWMutex
+}
+
+func newSendQueue() *sendQueue {
+	return &sendQueue{
+		lock: new(sync.RWMutex),
+	}
+}
+
+func (q *sendQueue) Enqueue() int {
+	q.lock.Lock()
+	defer q.lock.Unlock()
+
+	q.queued++
+	return q.queued
+}
+
+func (q *sendQueue) Finish(token int) {
+	q.lock.Lock()
+	defer q.lock.Unlock()
+
+	if token > q.queued {
+		return
+	}
+	q.finished = token
+}
+
+func (q *sendQueue) Reset() {
+	q.lock.Lock()
+	defer q.lock.Unlock()
+
+	q.queued = 0
+	q.finished = 0
+}
+
+func (q *sendQueue) Current() (int, int) {
+	q.lock.RLock()
+	defer q.lock.RUnlock()
+	return q.finished, q.queued
+}
+
+func (q *sendQueue) Idle() bool {
+	q.lock.RLock()
+	defer q.lock.RUnlock()
+	return q.queued == q.finished
 }
