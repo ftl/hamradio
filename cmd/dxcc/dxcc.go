@@ -121,7 +121,7 @@ func loadLocator(config cfg.Configuration) (locator.Locator, bool) {
 	return loc, true
 }
 
-func printPrefix(prefix *dxcc.Prefix) {
+func printPrefix(prefix dxcc.Prefix) {
 	fmt.Printf("Prefix %s: %s (%s)\n", prefix.Prefix, prefix.Name, prefix.PrimaryPrefix)
 	fmt.Printf("Continent: %s\n", prefix.Continent)
 	fmt.Printf("CQ: %d\n", prefix.CQZone)
@@ -132,7 +132,7 @@ func printPrefix(prefix *dxcc.Prefix) {
 	fmt.Printf("Exact Match: %t\n", prefix.NeedsExactMatch)
 }
 
-func printDistanceAzimuth(prefix *dxcc.Prefix, loc locator.Locator) {
+func printDistanceAzimuth(prefix dxcc.Prefix, loc locator.Locator) {
 	latLon := locator.ToLatLon(loc)
 	fmt.Printf("Distance: %v\n", latlon.Distance(latLon, prefix.LatLon))
 	fmt.Printf("Azimuth: %v\n", latlon.Azimuth(latLon, prefix.LatLon))

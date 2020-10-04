@@ -15,7 +15,7 @@ const DefaultLocalFilename = ".config/hamradio/cty.dat"
 
 // Prefixes contains all DXCC prefixes.
 type Prefixes struct {
-	items map[string][]*Prefix
+	items map[string][]Prefix
 }
 
 // Prefix contains the information for one specific DXCC prefix.
@@ -45,15 +45,15 @@ type TimeOffset float64
 
 // NewPrefixes creates a new instance of prefixes.
 func NewPrefixes() *Prefixes {
-	return &Prefixes{make(map[string][]*Prefix)}
+	return &Prefixes{make(map[string][]Prefix)}
 }
 
-func (prefixes *Prefixes) add(newPrefixes ...*Prefix) {
+func (prefixes *Prefixes) add(newPrefixes ...Prefix) {
 	for _, prefix := range newPrefixes {
 		key := strings.ToUpper(prefix.Prefix)
 		ps, ok := prefixes.items[key]
 		if !ok {
-			ps = make([]*Prefix, 0, 1)
+			ps = make([]Prefix, 0, 1)
 		}
 		prefixes.items[key] = append(ps, prefix)
 	}
@@ -61,12 +61,12 @@ func (prefixes *Prefixes) add(newPrefixes ...*Prefix) {
 
 // Find returns the best matching prefixes for a given string.
 // Since a prefix might be ambiguous, a slice of prefixes that match is returned.
-func (prefixes Prefixes) Find(s string) ([]*Prefix, bool) {
+func (prefixes Prefixes) Find(s string) ([]Prefix, bool) {
 	normalString := strings.ToUpper(strings.TrimSpace(s))
 	isExactMatch := true
 	for len(normalString) > 0 {
 		if ps, ok := prefixes.items[normalString]; ok {
-			result := make([]*Prefix, 0, len(ps))
+			result := make([]Prefix, 0, len(ps))
 			for _, prefix := range ps {
 				if !prefix.NeedsExactMatch || isExactMatch {
 					result = append(result, prefix)
@@ -79,5 +79,5 @@ func (prefixes Prefixes) Find(s string) ([]*Prefix, bool) {
 		isExactMatch = false
 	}
 
-	return []*Prefix{}, false
+	return []Prefix{}, false
 }

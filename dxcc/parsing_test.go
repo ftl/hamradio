@@ -32,7 +32,7 @@ func TestParseHeaderLine(t *testing.T) {
 		PrimaryPrefix:    "1A",
 		NotARRLCompliant: false,
 	}
-	if *header != expectedHeader {
+	if header != expectedHeader {
 		t.Errorf("expected %v, got %v", expectedHeader, header)
 	}
 }
@@ -73,7 +73,7 @@ func TestParsePrefix(t *testing.T) {
 			t.Errorf("parsing of %q failed: %v", testCase.value, err)
 			continue
 		}
-		if *actual != testCase.expected {
+		if actual != testCase.expected {
 			t.Errorf("expected %v, but got %v", testCase.expected, actual)
 		}
 	}

@@ -26,25 +26,25 @@ func Read(in io.Reader) (*Prefixes, error) {
 	return allPrefixes, nil
 }
 
-func readDXCCEntry(in io.Reader) ([]*Prefix, error) {
+func readDXCCEntry(in io.Reader) ([]Prefix, error) {
 	lines := bufio.NewReader(in)
 	line, err := lines.ReadString('\n')
 	if err != nil {
-		return []*Prefix{}, err
+		return []Prefix{}, err
 	}
 	header, err := parseHeaderLine(line)
 
-	allPrefixes := make([]*Prefix, 0, 10)
+	allPrefixes := make([]Prefix, 0, 10)
 	lastLine := false
 	for !lastLine {
 		line, err = lines.ReadString('\n')
 		if err != nil {
-			return []*Prefix{}, err
+			return []Prefix{}, err
 		}
-		var prefixes []*Prefix
+		var prefixes []Prefix
 		prefixes, lastLine, err = parsePrefixesLine(line, header)
 		if err != nil {
-			return []*Prefix{}, err
+			return []Prefix{}, err
 		}
 		allPrefixes = append(allPrefixes, prefixes...)
 	}
@@ -63,31 +63,31 @@ type dxccHeader struct {
 	NotARRLCompliant bool
 }
 
-func parseHeaderLine(line string) (*dxccHeader, error) {
+func parseHeaderLine(line string) (dxccHeader, error) {
 	fields := strings.Split(line, ":")
 	if len(fields) != 9 {
-		return &dxccHeader{}, fmt.Errorf("The DXCC header line must have 8 fields, separated by ':' and it must end with a ':'")
+		return dxccHeader{}, fmt.Errorf("The DXCC header line must have 8 fields, separated by ':' and it must end with a ':'")
 	}
 
 	var err error
-	header := &dxccHeader{}
+	header := dxccHeader{}
 	header.Name = strings.TrimSpace(fields[0])
 	header.CQZone, err = ParseCQZone(fields[1])
 	if err != nil {
-		return &dxccHeader{}, err
+		return dxccHeader{}, err
 	}
 	header.ITUZone, err = ParseITUZone(fields[2])
 	if err != nil {
-		return &dxccHeader{}, err
+		return dxccHeader{}, err
 	}
 	header.Continent = strings.TrimSpace(fields[3])
 	header.LatLon, err = parseLatLon(fields[4], fields[5])
 	if err != nil {
-		return &dxccHeader{}, err
+		return dxccHeader{}, err
 	}
 	header.TimeOffset, err = ParseTimeOffset(fields[6])
 	if err != nil {
-		return &dxccHeader{}, err
+		return dxccHeader{}, err
 	}
 	header.PrimaryPrefix = strings.TrimSpace(fields[7])
 	if strings.HasPrefix(header.PrimaryPrefix, "*") {
@@ -137,7 +137,7 @@ func ParseTimeOffset(s string) (TimeOffset, error) {
 	return TimeOffset(value), err
 }
 
-func parsePrefixesLine(line string, header *dxccHeader) (prefixes []*Prefix, lastLine bool, err error) {
+func parsePrefixesLine(line string, header dxccHeader) (prefixes []Prefix, lastLine bool, err error) {
 	normalLine := strings.TrimSpace(line)
 	lastLine = strings.HasSuffix(normalLine, ";")
 	lastIndex := len(normalLine)
@@ -145,12 +145,12 @@ func parsePrefixesLine(line string, header *dxccHeader) (prefixes []*Prefix, las
 		lastIndex--
 	}
 	values := strings.Split(strings.TrimSpace(normalLine[:lastIndex]), ",")
-	prefixes = make([]*Prefix, 0, len(values))
+	prefixes = make([]Prefix, 0, len(values))
 	for _, value := range values {
 		prefix, prefixError := parsePrefix(value, header)
 		if prefixError != nil {
 			err = prefixError
-			prefixes = make([]*Prefix, 0, len(values))
+			prefixes = make([]Prefix, 0, len(values))
 			return
 		}
 		prefixes = append(prefixes, prefix)
@@ -158,8 +158,8 @@ func parsePrefixesLine(line string, header *dxccHeader) (prefixes []*Prefix, las
 	return
 }
 
-func parsePrefix(s string, header *dxccHeader) (*Prefix, error) {
-	prefix := &Prefix{
+func parsePrefix(s string, header dxccHeader) (Prefix, error) {
+	prefix := Prefix{
 		Name:             header.Name,
 		CQZone:           header.CQZone,
 		ITUZone:          header.ITUZone,
@@ -181,18 +181,18 @@ func parsePrefix(s string, header *dxccHeader) (*Prefix, error) {
 	}
 	prefix.Prefix = s[startIndex:endIndex]
 
-	if err := overrideCQZone(prefix, s); err != nil {
-		return &Prefix{}, err
+	if err := overrideCQZone(&prefix, s); err != nil {
+		return Prefix{}, err
 	}
-	if err := overrideITUZone(prefix, s); err != nil {
-		return &Prefix{}, err
+	if err := overrideITUZone(&prefix, s); err != nil {
+		return Prefix{}, err
 	}
-	if err := overrideLatLon(prefix, s); err != nil {
-		return &Prefix{}, err
+	if err := overrideLatLon(&prefix, s); err != nil {
+		return Prefix{}, err
 	}
-	overrideContinent(prefix, s)
-	if err := overrideTimeOffset(prefix, s); err != nil {
-		return &Prefix{}, err
+	overrideContinent(&prefix, s)
+	if err := overrideTimeOffset(&prefix, s); err != nil {
+		return Prefix{}, err
 	}
 
 	return prefix, nil

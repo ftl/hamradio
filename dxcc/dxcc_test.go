@@ -6,7 +6,7 @@ import (
 
 func TestPrefixes_add(t *testing.T) {
 	prefixes := NewPrefixes()
-	prefix := &Prefix{Prefix: "P", Name: "N"}
+	prefix := Prefix{Prefix: "P", Name: "N"}
 
 	prefixes.add(prefix)
 
@@ -22,10 +22,10 @@ func TestPrefixes_add(t *testing.T) {
 func TestPrefixes_Find(t *testing.T) {
 	prefixes := NewPrefixes()
 	prefixes.add(
-		&Prefix{Prefix: "P1"},
-		&Prefix{Prefix: "P2"},
-		&Prefix{Prefix: "P2"},
-		&Prefix{Prefix: "P3AB", NeedsExactMatch: true},
+		Prefix{Prefix: "P1"},
+		Prefix{Prefix: "P2"},
+		Prefix{Prefix: "P2"},
+		Prefix{Prefix: "P3AB", NeedsExactMatch: true},
 	)
 
 	testCases := []struct {
