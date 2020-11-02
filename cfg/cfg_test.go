@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestDirectory(t *testing.T) {
@@ -73,6 +74,59 @@ func TestLoad(t *testing.T) {
 	}
 	if config["test_key"] != "test_value" {
 		t.Errorf("cannto retrieve test_key from test config, got %v", config)
+	}
+}
+
+func TestLoadJSON(t *testing.T) {
+	type subnode struct {
+		Key string `json:"key"`
+	}
+	type rootnode struct {
+		SubNode subnode `json:"subnode"`
+	}
+	type arraynode struct {
+		Value string `json:"value"`
+		Label string `json:"label"`
+	}
+	type testdata struct {
+		TestKey   string      `json:"test_key"`
+		RootNode  rootnode    `json:"rootnode"`
+		ArrayNode []arraynode `json:"arraynode"`
+	}
+
+	expected := testdata{
+		TestKey: "test_value",
+		RootNode: rootnode{
+			SubNode: subnode{
+				Key: "value",
+			},
+		},
+		ArrayNode: []arraynode{
+			{"1", "one"},
+			{"2", "two"},
+			{"3", "three"},
+		},
+	}
+	var actual testdata
+
+	err := LoadJSON("./testdata", "", &actual)
+
+	require.NoError(t, err)
+	assert.Equal(t, expected, actual)
+}
+
+func Test(t *testing.T) {
+	testCases := []struct {
+		desc string
+	}{
+		{
+			desc: "",
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+
+		})
 	}
 }
 

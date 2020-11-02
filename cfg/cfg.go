@@ -77,6 +77,25 @@ func PrepareDirectory(path string) (string, error) {
 	return absolutePath, os.MkdirAll(absolutePath, os.ModePerm)
 }
 
+// Exists returns true if the given file exists in the given path. If the path is the empty string, the default
+// configuration directory is used. If the given filename is the empty string, the default filename is used.
+func Exists(path, filename string) bool {
+	absolutePath, err := Directory(path)
+	if err != nil {
+		return false
+	}
+
+	var absoluteFilename string
+	if filename == "" {
+		absoluteFilename = filepath.Join(absolutePath, DefaultFilename)
+	} else {
+		absoluteFilename = filepath.Join(absolutePath, filename)
+	}
+
+	_, err = os.Stat(absoluteFilename)
+	return err == nil
+}
+
 // LoadDefault loads JSON configuration data from the default file in the default configuration directory.
 func LoadDefault() (Configuration, error) {
 	return Load("", "")
@@ -126,6 +145,69 @@ func Read(in io.Reader) (Configuration, error) {
 	}
 
 	return Configuration(data.(map[string]interface{})), nil
+}
+
+// LoadJSON loads JSON data from the given file in the given path and unmarshals it into the given data object.
+// If the path is the empty string, the default configuration directory is used. If the given filename is the
+// empty string, the default filename is used.
+func LoadJSON(path, filename string, data interface{}) error {
+	absolutePath, err := Directory(path)
+	if err != nil {
+		return err
+	}
+
+	var absoluteFilename string
+	if filename == "" {
+		absoluteFilename = filepath.Join(absolutePath, DefaultFilename)
+	} else {
+		absoluteFilename = filepath.Join(absolutePath, filename)
+	}
+
+	file, err := os.Open(absoluteFilename)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	in := bufio.NewReader(file)
+	var buffer bytes.Buffer
+	_, err = buffer.ReadFrom(in)
+	if err != nil {
+		return err
+	}
+
+	return json.Unmarshal(buffer.Bytes(), &data)
+}
+
+// SaveJSON saves the given JSON data to the given file in the given path.
+// If the path is the empty string, the default configuration directory is used. If the given filename is the
+// empty string, the default filename is used.
+func SaveJSON(path, filename string, data interface{}) error {
+	absolutePath, err := Directory(path)
+	if err != nil {
+		return err
+	}
+
+	var absoluteFilename string
+	if filename == "" {
+		absoluteFilename = filepath.Join(absolutePath, DefaultFilename)
+	} else {
+		absoluteFilename = filepath.Join(absolutePath, filename)
+	}
+
+	buf, err := json.MarshalIndent(data, "", "\t")
+	if err != nil {
+		return err
+	}
+
+	file, err := os.Create(absoluteFilename)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	_, err = file.Write(buf)
+	return err
 }
 
 // Get retrieves the value at the given path in the configuration data. If the key path
