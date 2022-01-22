@@ -69,7 +69,7 @@ func TestDatabase_Find(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		actual, err := database.Find(testCase.value)
+		actual, err := database.FindStrings(testCase.value)
 		if err != nil {
 			t.Errorf("%v", err)
 		}

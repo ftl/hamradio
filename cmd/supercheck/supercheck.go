@@ -54,7 +54,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	matches, err := database.Find(os.Args[1])
+	matches, err := database.FindStrings(os.Args[1])
 	if err != nil {
 		log.Fatal(err)
 	}

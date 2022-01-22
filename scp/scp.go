@@ -33,8 +33,9 @@ type Database struct {
 
 type match struct {
 	entry
-	distance distance
-	accuracy accuracy
+	distance   distance
+	accuracy   accuracy
+	editScript EditScript
 }
 
 // Read the database from a reader.
@@ -61,9 +62,38 @@ func Read(r io.Reader) (*Database, error) {
 }
 
 // Find all strings in database that partially match the given string
-func (database Database) Find(s string) ([]string, error) {
+func (database Database) FindStrings(s string) ([]string, error) {
+	allMatches, err := database.find(s)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]string, len(allMatches))
+	for i, m := range allMatches {
+		result[i] = m.s
+	}
+
+	return result, nil
+}
+
+// Find all strings in database that partially match the given string with detailed information on how the string matches.
+func (database Database) FindDetailed(s string) ([]EditScript, error) {
+	allMatches, err := database.find(s)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]EditScript, len(allMatches))
+	for i, m := range allMatches {
+		result[i] = m.editScript
+	}
+
+	return result, nil
+}
+
+func (database Database) find(s string) ([]match, error) {
 	if len(s) < 3 {
-		return []string{}, nil
+		return nil, nil
 	}
 	source := newEntry(s)
 
@@ -89,13 +119,8 @@ func (database Database) Find(s string) ([]string, error) {
 
 	waiter.Wait()
 	close(matches)
-	allMatches := <-merged
+	result := <-merged
 	close(merged)
-
-	result := make([]string, 0)
-	for _, m := range allMatches {
-		result = append(result, m.s)
-	}
 	return result, nil
 }
 
@@ -105,9 +130,9 @@ func findMatches(matches chan<- match, input entry, entries entrySet, waiter *sy
 	const accuracyThreshold = 0.6
 
 	entries.Do(func(e entry) {
-		distance, accuracy := e.DistanceTo(input)
+		distance, accuracy, editScript := e.EditTo(input)
 		if distance <= distanceThreshold && accuracy >= accuracyThreshold {
-			matches <- match{e, distance, accuracy}
+			matches <- match{e, distance, accuracy, editScript}
 		}
 	})
 }
@@ -122,16 +147,23 @@ func collectMatches(result chan<- []match, matches <-chan match) {
 		}
 	}
 	sort.Slice(allMatches, func(i, j int) bool {
-		if allMatches[i].distance != allMatches[j].distance {
-			return allMatches[i].distance < allMatches[j].distance
+		iMatch := allMatches[i]
+		jMatch := allMatches[j]
+		if iMatch.distance != jMatch.distance {
+			return iMatch.distance < jMatch.distance
 		}
-		if len(allMatches[i].s) != len(allMatches[j].s) {
-			return len(allMatches[i].s) < len(allMatches[j].s)
+		iLongestMatch := iMatch.editScript.LongestMatch()
+		jLongestMatch := jMatch.editScript.LongestMatch()
+		if iLongestMatch != jLongestMatch {
+			return iLongestMatch > jLongestMatch
 		}
-		if allMatches[i].accuracy != allMatches[j].accuracy {
-			return allMatches[i].accuracy > allMatches[j].accuracy
+		if len(iMatch.s) != len(jMatch.s) {
+			return len(iMatch.s) < len(jMatch.s)
 		}
-		return allMatches[i].s < allMatches[j].s
+		if iMatch.accuracy != jMatch.accuracy {
+			return iMatch.accuracy > jMatch.accuracy
+		}
+		return iMatch.s < jMatch.s
 	})
 	result <- allMatches
 }
