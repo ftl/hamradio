@@ -41,26 +41,27 @@ func TestEntrySet(t *testing.T) {
 	assert.Equal(t, "ABC", entries[0].s)
 }
 
-func TestNewEditScript(t *testing.T) {
+func TestNewAnnotatedMatch(t *testing.T) {
 	tt := []struct {
 		input    string
 		entry    string
-		expected EditScript
+		expected AnnotatedMatch
 	}{
-		{"abcd", "abcd", EditScript{Edit{NOP, "abcd"}}},
-		{"abc", "abcd", EditScript{Edit{NOP, "abc"}, Edit{Delete, "d"}}},
-		{"abcd", "abc", EditScript{Edit{NOP, "abc"}, Edit{Insert, "d"}}},
-		{"efgd", "abcd", EditScript{Edit{Substitute, "efg"}, Edit{NOP, "d"}}},
-		{"efghd", "abcd", EditScript{Edit{Substitute, "efg"}, Edit{Insert, "h"}, Edit{NOP, "d"}}},
-		{"aefgd", "abcd", EditScript{Edit{NOP, "a"}, Edit{Substitute, "ef"}, Edit{Insert, "g"}, Edit{NOP, "d"}}},
+		{"abcd", "abcd", AnnotatedMatch{Part{NOP, "abcd"}}},
+		{"abc", "abcd", AnnotatedMatch{Part{NOP, "abc"}, Part{Insert, "d"}}},
+		{"abcd", "abc", AnnotatedMatch{Part{NOP, "abc"}, Part{Delete, "d"}}},
+		{"efgd", "abcd", AnnotatedMatch{Part{Substitute, "abc"}, Part{NOP, "d"}}},
+		{"efghd", "abcd", AnnotatedMatch{Part{Substitute, "abc"}, Part{Delete, "h"}, Part{NOP, "d"}}},
+		{"aefgd", "abcd", AnnotatedMatch{Part{NOP, "a"}, Part{Substitute, "bc"}, Part{Delete, "g"}, Part{NOP, "d"}}},
 	}
 	for _, tc := range tt {
-		t.Run(fmt.Sprintf("%s -> %s", tc.entry, tc.input), func(t *testing.T) {
-			matrix := levenshtein.MatrixForStrings([]rune(tc.entry), []rune(tc.input), levenshtein.DefaultOptions)
+		t.Run(fmt.Sprintf("%s -> %s", tc.input, tc.entry), func(t *testing.T) {
+			matrix := levenshtein.MatrixForStrings([]rune(tc.input), []rune(tc.entry), levenshtein.DefaultOptions)
 			script := levenshtein.EditScriptForMatrix(matrix, levenshtein.DefaultOptions)
 
-			actual := newEditScript(tc.entry, tc.input, script)
+			actual := newAnnotatedMatch(tc.input, tc.entry, script)
 			assert.Equal(t, tc.expected, actual)
+			assert.Equal(t, tc.entry, actual.String())
 		})
 	}
 }

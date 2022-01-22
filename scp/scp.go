@@ -35,7 +35,7 @@ type match struct {
 	entry
 	distance   distance
 	accuracy   accuracy
-	editScript EditScript
+	annotation AnnotatedMatch
 }
 
 // Read the database from a reader.
@@ -77,15 +77,15 @@ func (database Database) FindStrings(s string) ([]string, error) {
 }
 
 // Find all strings in database that partially match the given string with detailed information on how the string matches.
-func (database Database) FindDetailed(s string) ([]EditScript, error) {
+func (database Database) FindAnnotated(s string) ([]AnnotatedMatch, error) {
 	allMatches, err := database.find(s)
 	if err != nil {
 		return nil, err
 	}
 
-	result := make([]EditScript, len(allMatches))
+	result := make([]AnnotatedMatch, len(allMatches))
 	for i, m := range allMatches {
-		result[i] = m.editScript
+		result[i] = m.annotation
 	}
 
 	return result, nil
@@ -130,7 +130,7 @@ func findMatches(matches chan<- match, input entry, entries entrySet, waiter *sy
 	const accuracyThreshold = 0.6
 
 	entries.Do(func(e entry) {
-		distance, accuracy, editScript := e.EditTo(input)
+		distance, accuracy, editScript := input.EditTo(e)
 		if distance <= distanceThreshold && accuracy >= accuracyThreshold {
 			matches <- match{e, distance, accuracy, editScript}
 		}
@@ -152,10 +152,10 @@ func collectMatches(result chan<- []match, matches <-chan match) {
 		if iMatch.distance != jMatch.distance {
 			return iMatch.distance < jMatch.distance
 		}
-		iLongestMatch := iMatch.editScript.LongestMatch()
-		jLongestMatch := jMatch.editScript.LongestMatch()
-		if iLongestMatch != jLongestMatch {
-			return iLongestMatch > jLongestMatch
+		iLongestPart := iMatch.annotation.LongestPart()
+		jLongestPart := jMatch.annotation.LongestPart()
+		if iLongestPart != jLongestPart {
+			return iLongestPart > jLongestPart
 		}
 		if len(iMatch.s) != len(jMatch.s) {
 			return len(iMatch.s) < len(jMatch.s)
