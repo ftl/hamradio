@@ -31,6 +31,12 @@ type Database struct {
 	items map[byte]entrySet
 }
 
+type match struct {
+	entry
+	distance distance
+	accuracy accuracy
+}
+
 // Read the database from a reader.
 func Read(r io.Reader) (*Database, error) {
 	database := &Database{make(map[byte]entrySet)}
@@ -59,14 +65,14 @@ func (database Database) Find(s string) ([]string, error) {
 	if len(s) < 3 {
 		return []string{}, nil
 	}
-	fp := extractFingerprint(s)
+	source := newEntry(s)
 
 	matches := make(chan match, 100)
 	merged := make(chan []match)
 	waiter := &sync.WaitGroup{}
 
 	byteMap := make(map[byte]bool)
-	for _, b := range fp {
+	for _, b := range source.fp {
 		if byteMap[b] {
 			continue
 		}
@@ -77,7 +83,7 @@ func (database Database) Find(s string) ([]string, error) {
 		}
 
 		waiter.Add(1)
-		go findMatches(matches, entrySet, fp, waiter)
+		go findMatches(matches, source, entrySet, waiter)
 	}
 	go collectMatches(merged, matches)
 
@@ -93,13 +99,15 @@ func (database Database) Find(s string) ([]string, error) {
 	return result, nil
 }
 
-func findMatches(matches chan<- match, entries entrySet, fp fingerprint, waiter *sync.WaitGroup) {
+func findMatches(matches chan<- match, input entry, entries entrySet, waiter *sync.WaitGroup) {
 	defer waiter.Done()
+	const distanceThreshold = 2
+	const accuracyThreshold = 0.6
 
 	entries.Do(func(e entry) {
-		contains, accuracy := e.fp.Contains(fp)
-		if contains {
-			matches <- match{e, accuracy}
+		distance, accuracy := e.DistanceTo(input)
+		if distance <= distanceThreshold && accuracy >= accuracyThreshold {
+			matches <- match{e, distance, accuracy}
 		}
 	})
 }
@@ -114,10 +122,16 @@ func collectMatches(result chan<- []match, matches <-chan match) {
 		}
 	}
 	sort.Slice(allMatches, func(i, j int) bool {
-		if allMatches[i].a == allMatches[j].a {
-			return allMatches[i].s < allMatches[j].s
+		if allMatches[i].distance != allMatches[j].distance {
+			return allMatches[i].distance < allMatches[j].distance
 		}
-		return allMatches[i].a > allMatches[j].a
+		if len(allMatches[i].s) != len(allMatches[j].s) {
+			return len(allMatches[i].s) < len(allMatches[j].s)
+		}
+		if allMatches[i].accuracy != allMatches[j].accuracy {
+			return allMatches[i].accuracy > allMatches[j].accuracy
+		}
+		return allMatches[i].s < allMatches[j].s
 	})
 	result <- allMatches
 }

@@ -1,6 +1,8 @@
 package scp
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestEntrySet(t *testing.T) {
 	e1_1 := newEntry("one")

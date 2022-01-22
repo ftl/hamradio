@@ -1,17 +1,37 @@
 package scp
 
+import (
+	"strings"
+
+	"github.com/texttheater/golang-levenshtein/levenshtein"
+)
+
+type distance int
+type accuracy float64
+
 type entry struct {
 	s  string
 	fp fingerprint
 }
 
-type match struct {
-	entry
-	a accuracy
+func newEntry(s string) entry {
+	s = strings.ToUpper(strings.TrimSpace(s))
+	return entry{s, extractFingerprint(s)}
 }
 
-func newEntry(s string) entry {
-	return entry{s, extractFingerprint(s)}
+func (e entry) DistanceTo(o entry) (distance, accuracy) {
+	source := []rune(e.s)
+	target := []rune(o.s)
+	distanceOptions := levenshtein.DefaultOptions
+	ratioOptions := levenshtein.DefaultOptions
+
+	dist := levenshtein.DistanceForStrings(source, target, distanceOptions)
+	ratio := levenshtein.RatioForStrings(source, target, ratioOptions)
+	if ratio > 1 {
+		ratio = 1.0 / ratio
+	}
+
+	return distance(dist), accuracy(ratio)
 }
 
 type entrySet map[string]entry
