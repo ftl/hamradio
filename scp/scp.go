@@ -31,23 +31,38 @@ type Database struct {
 	items map[byte]entrySet
 }
 
+var SCPFormat = EntryParserFunc(func(line string) (Entry, bool) {
+	if strings.HasPrefix(line, "#") {
+		return Entry{}, false
+	}
+	return newEntry(line), true
+})
+
 type match struct {
-	entry
+	Entry
 	distance   distance
 	accuracy   accuracy
 	annotation AnnotatedMatch
 }
 
-// Read the database from a reader.
-func Read(r io.Reader) (*Database, error) {
+// Read the database from a reader using the SCP format.
+func ReadSCP(r io.Reader) (*Database, error) {
+	return Read(r, SCPFormat)
+}
+
+// Read the database from a reader unsing the given entry parser.
+func Read(r io.Reader, parser EntryParser) (*Database, error) {
 	database := &Database{make(map[byte]entrySet)}
 	lines := bufio.NewScanner(r)
 	for lines.Scan() {
-		line := lines.Text()
-		if strings.HasPrefix(strings.TrimSpace(line), "#") {
+		line := strings.TrimSpace(lines.Text())
+		if len(line) == 0 {
 			continue
 		}
-		entry := newEntry(line)
+		entry, ok := parser.ParseEntry(line)
+		if !ok {
+			continue
+		}
 		for _, b := range entry.fingerprint {
 			es, ok := database.items[b]
 			if !ok {
@@ -124,11 +139,11 @@ func (database Database) find(s string) ([]match, error) {
 	return result, nil
 }
 
-func findMatches(matches chan<- match, input entry, entries entrySet, waiter *sync.WaitGroup) {
+func findMatches(matches chan<- match, input Entry, entries entrySet, waiter *sync.WaitGroup) {
 	defer waiter.Done()
 	const accuracyThreshold = 0.65
 
-	entries.Do(func(e entry) {
+	entries.Do(func(e Entry) {
 		distance, accuracy, editScript := input.EditTo(e)
 		if accuracy >= accuracyThreshold {
 			matches <- match{e, distance, accuracy, editScript}

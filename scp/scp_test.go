@@ -16,7 +16,7 @@ func TestDatabase_Read(t *testing.T) {
 	2E0BPP
 	N1MM`
 
-	database, err := Read(strings.NewReader(testSCP))
+	database, err := Read(strings.NewReader(testSCP), SCPFormat)
 	if err != nil {
 		t.Errorf("%v", err)
 	}
@@ -55,7 +55,7 @@ func TestDatabase_Find(t *testing.T) {
 	file, err := os.Open("testdata/MASTER.SCP")
 	require.NoError(t, err)
 	defer file.Close()
-	database, err := Read(file)
+	database, err := Read(file, SCPFormat)
 	require.NoError(t, err)
 
 	tt := []struct {

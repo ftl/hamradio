@@ -9,17 +9,32 @@ import (
 type distance int
 type accuracy float64
 
-type entry struct {
+type Entry struct {
 	key         string
 	fingerprint fingerprint
+	fields      map[FieldName]string
 }
 
-func newEntry(key string) entry {
+type FieldName string
+
+func newEntry(key string) Entry {
 	key = strings.ToUpper(strings.TrimSpace(key))
-	return entry{key, extractFingerprint(key)}
+	return Entry{
+		key:         key,
+		fingerprint: extractFingerprint(key),
+		fields:      make(map[FieldName]string),
+	}
 }
 
-func (e entry) CompareTo(o entry) (distance, accuracy) {
+func (e Entry) String() string {
+	return e.key
+}
+
+func (e Entry) Get(field FieldName) string {
+	return e.fields[field]
+}
+
+func (e Entry) CompareTo(o Entry) (distance, accuracy) {
 	matrix := levenshtein.MatrixForStrings([]rune(e.key), []rune(o.key), levenshtein.DefaultOptions)
 
 	dist := levenshtein.DistanceForMatrix(matrix)
@@ -31,7 +46,7 @@ func (e entry) CompareTo(o entry) (distance, accuracy) {
 	return distance(dist), accuracy(ratio)
 }
 
-func (e entry) EditTo(o entry) (distance, accuracy, AnnotatedMatch) {
+func (e Entry) EditTo(o Entry) (distance, accuracy, AnnotatedMatch) {
 	matrix := levenshtein.MatrixForStrings([]rune(e.key), []rune(o.key), levenshtein.DefaultOptions)
 
 	dist := levenshtein.DistanceForMatrix(matrix)
@@ -151,21 +166,31 @@ func (m AnnotatedMatch) LongestPart() int {
 	return result
 }
 
-type entrySet map[string]entry
+type EntryParser interface {
+	ParseEntry(string) (Entry, bool)
+}
 
-func (s *entrySet) Add(entries ...entry) *entrySet {
+type EntryParserFunc func(string) (Entry, bool)
+
+func (f EntryParserFunc) ParseEntry(line string) (Entry, bool) {
+	return f(line)
+}
+
+type entrySet map[string]Entry
+
+func (s *entrySet) Add(entries ...Entry) *entrySet {
 	for _, entry := range entries {
 		(*s)[entry.key] = entry
 	}
 	return s
 }
 
-func (s entrySet) Entries() []entry {
-	return s.Filter(func(entry) bool { return true })
+func (s entrySet) Entries() []Entry {
+	return s.Filter(func(Entry) bool { return true })
 }
 
-func (s entrySet) Filter(filter func(entry) bool) []entry {
-	result := make([]entry, 0, len(s))
+func (s entrySet) Filter(filter func(Entry) bool) []Entry {
+	result := make([]Entry, 0, len(s))
 	for _, entry := range s {
 		if filter(entry) {
 			result = append(result, entry)
@@ -174,7 +199,7 @@ func (s entrySet) Filter(filter func(entry) bool) []entry {
 	return result
 }
 
-func (set entrySet) FilterAndMap(filter func(e entry) interface{}) []interface{} {
+func (set entrySet) FilterAndMap(filter func(e Entry) interface{}) []interface{} {
 	result := make([]interface{}, 0, len(set))
 	for _, e := range set {
 		if value := filter(e); value != nil {
@@ -184,7 +209,7 @@ func (set entrySet) FilterAndMap(filter func(e entry) interface{}) []interface{}
 	return result
 }
 
-func (set entrySet) Do(f func(e entry)) {
+func (set entrySet) Do(f func(e Entry)) {
 	for _, e := range set {
 		f(e)
 	}

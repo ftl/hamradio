@@ -34,7 +34,7 @@ func TestEntrySet(t *testing.T) {
 	entries = set.Entries()
 	assert.Equal(t, 3, len(entries))
 
-	entries = set.Filter(func(e entry) bool {
+	entries = set.Filter(func(e Entry) bool {
 		return e.key == "ABC"
 	})
 	assert.Equal(t, 1, len(entries))
