@@ -3,6 +3,9 @@ package scp
 import (
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const testSCP = `# This is a comment
@@ -49,32 +52,26 @@ func TestDatabase_Read(t *testing.T) {
 
 func TestDatabase_Find(t *testing.T) {
 	database, err := Read(strings.NewReader(testSCP))
-	if err != nil {
-		t.Errorf("%v", err)
-	}
+	require.NoError(t, err)
 
-	testCases := []struct {
-		value    string
+	tt := []struct {
+		input    string
 		expected []string
 	}{
 		{"", []string{}},
 		{"2", []string{}},
 		{"2E", []string{}},
-		{"E0B", []string{"2E0BNI", "2E0BPP"}},
-		{"EBN", []string{"2E0BNI"}},
-		{"2EB", []string{"2E0BNI", "2E0BPP"}},
+		{"2EB", []string{}},
+		{"2E0B", []string{"2E0BNI", "2E0BPP"}},
+		{"2EBN", []string{"2E0BNI"}},
 		{"E0BN", []string{"2E0BNI"}},
 		{"NMM", []string{"N1MM"}},
-		{"2E0BNIX", []string{}},
-	}
-
-	for _, testCase := range testCases {
-		actual, err := database.FindStrings(testCase.value)
-		if err != nil {
-			t.Errorf("%v", err)
-		}
-		if len(actual) != len(testCase.expected) {
-			t.Errorf("%s: expected %d entries, but got %d, %v", testCase.value, len(testCase.expected), len(actual), actual)
-		}
+		{"2E0BNIX", []string{"2E0BNI"}}}
+	for _, tc := range tt {
+		t.Run(tc.input, func(t *testing.T) {
+			actual, err := database.FindStrings(tc.input)
+			assert.NoError(t, err)
+			assert.Equal(t, tc.expected, actual)
+		})
 	}
 }

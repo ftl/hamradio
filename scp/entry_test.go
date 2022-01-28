@@ -35,10 +35,10 @@ func TestEntrySet(t *testing.T) {
 	assert.Equal(t, 3, len(entries))
 
 	entries = set.Filter(func(e entry) bool {
-		return e.s == "ABC"
+		return e.key == "ABC"
 	})
 	assert.Equal(t, 1, len(entries))
-	assert.Equal(t, "ABC", entries[0].s)
+	assert.Equal(t, "ABC", entries[0].key)
 }
 
 func TestNewAnnotatedMatch(t *testing.T) {

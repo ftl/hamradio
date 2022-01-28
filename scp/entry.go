@@ -10,17 +10,17 @@ type distance int
 type accuracy float64
 
 type entry struct {
-	s  string
-	fp fingerprint
+	key         string
+	fingerprint fingerprint
 }
 
-func newEntry(s string) entry {
-	s = strings.ToUpper(strings.TrimSpace(s))
-	return entry{s, extractFingerprint(s)}
+func newEntry(key string) entry {
+	key = strings.ToUpper(strings.TrimSpace(key))
+	return entry{key, extractFingerprint(key)}
 }
 
 func (e entry) CompareTo(o entry) (distance, accuracy) {
-	matrix := levenshtein.MatrixForStrings([]rune(e.s), []rune(o.s), levenshtein.DefaultOptions)
+	matrix := levenshtein.MatrixForStrings([]rune(e.key), []rune(o.key), levenshtein.DefaultOptions)
 
 	dist := levenshtein.DistanceForMatrix(matrix)
 	ratio := levenshtein.RatioForMatrix(matrix)
@@ -32,7 +32,7 @@ func (e entry) CompareTo(o entry) (distance, accuracy) {
 }
 
 func (e entry) EditTo(o entry) (distance, accuracy, AnnotatedMatch) {
-	matrix := levenshtein.MatrixForStrings([]rune(e.s), []rune(o.s), levenshtein.DefaultOptions)
+	matrix := levenshtein.MatrixForStrings([]rune(e.key), []rune(o.key), levenshtein.DefaultOptions)
 
 	dist := levenshtein.DistanceForMatrix(matrix)
 	ratio := levenshtein.RatioForMatrix(matrix)
@@ -40,7 +40,7 @@ func (e entry) EditTo(o entry) (distance, accuracy, AnnotatedMatch) {
 		ratio = 1.0 / ratio
 	}
 	script := levenshtein.EditScriptForMatrix(matrix, levenshtein.DefaultOptions)
-	AnnotatedMatch := newAnnotatedMatch(e.s, o.s, script)
+	AnnotatedMatch := newAnnotatedMatch(e.key, o.key, script)
 
 	return distance(dist), accuracy(ratio), AnnotatedMatch
 }
@@ -55,8 +55,8 @@ const (
 )
 
 type Part struct {
-	OP MatchingOperation
-	S  string
+	OP    MatchingOperation
+	Value string
 }
 
 type AnnotatedMatch []Part
@@ -83,16 +83,16 @@ func newAnnotatedMatch(source, target string, script levenshtein.EditScript) Ann
 		}
 
 		if lastPart.OP == currentPart.OP {
-			lastPart.S += currentPart.S
+			lastPart.Value += currentPart.Value
 		} else {
-			if len(lastPart.S) > 0 {
+			if len(lastPart.Value) > 0 {
 				rawScript = append(rawScript, lastPart)
 			}
 			lastPart = currentPart
 		}
 	}
 
-	if lastPart.OP == currentPart.OP && len(lastPart.S) > 0 {
+	if lastPart.OP == currentPart.OP && len(lastPart.Value) > 0 {
 		rawScript = append(rawScript, lastPart)
 	}
 
@@ -110,42 +110,42 @@ func newAnnotatedMatch(source, target string, script levenshtein.EditScript) Ann
 			continue
 		}
 
-		lastLen := len(lastPart.S)
-		currentLen := len(currentPart.S)
+		lastLen := len(lastPart.Value)
+		currentLen := len(currentPart.Value)
 		if lastLen > currentLen {
-			result[len(result)-1] = Part{Substitute, lastPart.S[:currentLen]}
-			result = append(result, Part{Insert, lastPart.S[currentLen:]})
+			result[len(result)-1] = Part{Substitute, lastPart.Value[:currentLen]}
+			result = append(result, Part{Insert, lastPart.Value[currentLen:]})
 			continue
 		}
 		if lastLen < currentLen {
-			result[len(result)-1] = Part{Substitute, lastPart.S}
-			result = append(result, Part{Delete, currentPart.S[lastLen:]})
+			result[len(result)-1] = Part{Substitute, lastPart.Value}
+			result = append(result, Part{Delete, currentPart.Value[lastLen:]})
 			continue
 		}
-		result[len(result)-1] = Part{Substitute, lastPart.S}
+		result[len(result)-1] = Part{Substitute, lastPart.Value}
 	}
 
 	return result
 }
 
-func (s AnnotatedMatch) String() string {
+func (m AnnotatedMatch) String() string {
 	var result string
-	for _, e := range s {
+	for _, e := range m {
 		if e.OP != Delete {
-			result += e.S
+			result += e.Value
 		}
 	}
 	return result
 }
 
-func (s AnnotatedMatch) LongestPart() int {
+func (m AnnotatedMatch) LongestPart() int {
 	result := 0
-	for _, e := range s {
+	for _, e := range m {
 		if e.OP != NOP {
 			continue
 		}
-		if result < len(e.S) {
-			result = len(e.S)
+		if result < len(e.Value) {
+			result = len(e.Value)
 		}
 	}
 	return result
@@ -153,22 +153,22 @@ func (s AnnotatedMatch) LongestPart() int {
 
 type entrySet map[string]entry
 
-func (set *entrySet) Add(entries ...entry) *entrySet {
-	for _, e := range entries {
-		(*set)[e.s] = e
+func (s *entrySet) Add(entries ...entry) *entrySet {
+	for _, entry := range entries {
+		(*s)[entry.key] = entry
 	}
-	return set
+	return s
 }
 
-func (set entrySet) Entries() []entry {
-	return set.Filter(func(e entry) bool { return true })
+func (s entrySet) Entries() []entry {
+	return s.Filter(func(entry) bool { return true })
 }
 
-func (set entrySet) Filter(filter func(e entry) bool) []entry {
-	result := make([]entry, 0, len(set))
-	for _, e := range set {
-		if filter(e) {
-			result = append(result, e)
+func (s entrySet) Filter(filter func(entry) bool) []entry {
+	result := make([]entry, 0, len(s))
+	for _, entry := range s {
+		if filter(entry) {
+			result = append(result, entry)
 		}
 	}
 	return result

@@ -48,7 +48,7 @@ func Read(r io.Reader) (*Database, error) {
 			continue
 		}
 		entry := newEntry(line)
-		for _, b := range entry.fp {
+		for _, b := range entry.fingerprint {
 			es, ok := database.items[b]
 			if !ok {
 				es = entrySet{}
@@ -70,7 +70,7 @@ func (database Database) FindStrings(s string) ([]string, error) {
 
 	result := make([]string, len(allMatches))
 	for i, m := range allMatches {
-		result[i] = m.s
+		result[i] = m.key
 	}
 
 	return result, nil
@@ -102,7 +102,7 @@ func (database Database) find(s string) ([]match, error) {
 	waiter := &sync.WaitGroup{}
 
 	byteMap := make(map[byte]bool)
-	for _, b := range source.fp {
+	for _, b := range source.fingerprint {
 		if byteMap[b] {
 			continue
 		}
@@ -141,8 +141,8 @@ func collectMatches(result chan<- []match, matches <-chan match) {
 	allMatches := make([]match, 0)
 	matchSet := make(map[string]match)
 	for match := range matches {
-		if _, ok := matchSet[match.s]; !ok {
-			matchSet[match.s] = match
+		if _, ok := matchSet[match.key]; !ok {
+			matchSet[match.key] = match
 			allMatches = append(allMatches, match)
 		}
 	}
@@ -157,13 +157,13 @@ func collectMatches(result chan<- []match, matches <-chan match) {
 		if iLongestPart != jLongestPart {
 			return iLongestPart > jLongestPart
 		}
-		if len(iMatch.s) != len(jMatch.s) {
-			return len(iMatch.s) < len(jMatch.s)
+		if len(iMatch.key) != len(jMatch.key) {
+			return len(iMatch.key) < len(jMatch.key)
 		}
 		if iMatch.accuracy != jMatch.accuracy {
 			return iMatch.accuracy > jMatch.accuracy
 		}
-		return iMatch.s < jMatch.s
+		return iMatch.key < jMatch.key
 	})
 	result <- allMatches
 }
