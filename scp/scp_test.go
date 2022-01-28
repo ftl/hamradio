@@ -66,11 +66,11 @@ func TestDatabase_Find(t *testing.T) {
 		{"D", []string{}},
 		{"DB", []string{}},
 		{"DBB", []string{"DJ8BB", "DK9BB"}},
-		{"DAB", []string{"DK1AB"}},
+		{"DAB", []string{"DK1AB", "DL1ABC", "DL2ABC"}},
 		{"D1AB", []string{"DK1AB", "DL1ABC"}},
-		{"DLAB", []string{"DL1ABC", "DL2ABC"}},
-		{"DABC", []string{"DL1ABC", "DL2ABC"}},
-		{"DK1ABC", []string{"DK1AB", "DL1ABC"}}}
+		{"DLAB", []string{"DL1ABC", "DL2ABC", "DK1AB"}},
+		{"DABC", []string{"DL1ABC", "DL2ABC", "DK1AB"}},
+		{"DK1ABC", []string{"DK1AB", "DL1ABC", "DL2ABC"}}}
 	for _, tc := range tt {
 		t.Run(tc.input, func(t *testing.T) {
 			actual, err := database.FindStrings(tc.input)

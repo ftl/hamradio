@@ -126,12 +126,11 @@ func (database Database) find(s string) ([]match, error) {
 
 func findMatches(matches chan<- match, input entry, entries entrySet, waiter *sync.WaitGroup) {
 	defer waiter.Done()
-	const distanceThreshold = 2
-	const accuracyThreshold = 0.6
+	const accuracyThreshold = 0.65
 
 	entries.Do(func(e entry) {
 		distance, accuracy, editScript := input.EditTo(e)
-		if distance <= distanceThreshold && accuracy >= accuracyThreshold {
+		if accuracy >= accuracyThreshold {
 			matches <- match{e, distance, accuracy, editScript}
 		}
 	})
@@ -149,19 +148,19 @@ func collectMatches(result chan<- []match, matches <-chan match) {
 	sort.Slice(allMatches, func(i, j int) bool {
 		iMatch := allMatches[i]
 		jMatch := allMatches[j]
-		if iMatch.distance != jMatch.distance {
-			return iMatch.distance < jMatch.distance
-		}
 		iLongestPart := iMatch.annotation.LongestPart()
 		jLongestPart := jMatch.annotation.LongestPart()
 		if iLongestPart != jLongestPart {
 			return iLongestPart > jLongestPart
 		}
-		if len(iMatch.key) != len(jMatch.key) {
-			return len(iMatch.key) < len(jMatch.key)
-		}
 		if iMatch.accuracy != jMatch.accuracy {
 			return iMatch.accuracy > jMatch.accuracy
+		}
+		if iMatch.distance != jMatch.distance {
+			return iMatch.distance < jMatch.distance
+		}
+		if len(iMatch.key) != len(jMatch.key) {
+			return len(iMatch.key) < len(jMatch.key)
 		}
 		return iMatch.key < jMatch.key
 	})
