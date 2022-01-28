@@ -1,6 +1,7 @@
 package scp
 
 import (
+	"os"
 	"strings"
 	"testing"
 
@@ -8,13 +9,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const testSCP = `# This is a comment
-2E0AOZ
-2E0BNI
-2E0BPP
-N1MM`
-
 func TestDatabase_Read(t *testing.T) {
+	const testSCP = `# This is a comment
+	2E0AOZ
+	2E0BNI
+	2E0BPP
+	N1MM`
+
 	database, err := Read(strings.NewReader(testSCP))
 	if err != nil {
 		t.Errorf("%v", err)
@@ -51,7 +52,10 @@ func TestDatabase_Read(t *testing.T) {
 }
 
 func TestDatabase_Find(t *testing.T) {
-	database, err := Read(strings.NewReader(testSCP))
+	file, err := os.Open("testdata/MASTER.SCP")
+	require.NoError(t, err)
+	defer file.Close()
+	database, err := Read(file)
 	require.NoError(t, err)
 
 	tt := []struct {
@@ -59,14 +63,14 @@ func TestDatabase_Find(t *testing.T) {
 		expected []string
 	}{
 		{"", []string{}},
-		{"2", []string{}},
-		{"2E", []string{}},
-		{"2EB", []string{}},
-		{"2E0B", []string{"2E0BNI", "2E0BPP"}},
-		{"2EBN", []string{"2E0BNI"}},
-		{"E0BN", []string{"2E0BNI"}},
-		{"NMM", []string{"N1MM"}},
-		{"2E0BNIX", []string{"2E0BNI"}}}
+		{"D", []string{}},
+		{"DB", []string{}},
+		{"DBB", []string{"DJ8BB", "DK9BB"}},
+		{"DAB", []string{"DK1AB"}},
+		{"D1AB", []string{"DK1AB", "DL1ABC"}},
+		{"DLAB", []string{"DL1ABC", "DL2ABC"}},
+		{"DABC", []string{"DL1ABC", "DL2ABC"}},
+		{"DK1ABC", []string{"DK1AB", "DL1ABC"}}}
 	for _, tc := range tt {
 		t.Run(tc.input, func(t *testing.T) {
 			actual, err := database.FindStrings(tc.input)
