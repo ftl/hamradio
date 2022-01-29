@@ -66,14 +66,29 @@ func TestParseEntry(t *testing.T) {
 }
 
 func TestLoadCallHistoryFromFile(t *testing.T) {
-	file, err := os.Open("testdata/DefaultFieldSet.callhistory")
-	require.NoError(t, err)
-	defer file.Close()
-	database, err := ReadCallHistory(file)
-	require.NoError(t, err)
+	tt := []struct {
+		filename        string
+		populatedFields FieldSet
+	}{
+		{"testdata/DefaultFieldSet.callhistory", DefaultFieldSet[1:]},
+		{"testdata/IndividualFieldSet.callhistory", NewFieldSet("Name", "Sect")},
+	}
+	for _, tc := range tt {
+		t.Run(tc.filename, func(t *testing.T) {
+			file, err := os.Open(tc.filename)
+			require.NoError(t, err)
+			database, err := ReadCallHistory(file)
+			file.Close()
+			require.NoError(t, err)
 
-	actual, err := database.FindStrings("dl3ney")
+			actual, err := database.FindEntries("dl3ney")
 
-	assert.NoError(t, err)
-	assert.Equal(t, []string{"DL3NEY"}, actual)
+			assert.NoError(t, err)
+			assert.Equal(t, 1, len(actual))
+			assert.Equal(t, "DL3NEY", actual[0].Key())
+			assert.ElementsMatch(t, tc.populatedFields, actual[0].PopulatedFields())
+			assert.Equal(t, "Florian", actual[0].Get("Name"))
+			assert.Equal(t, "B36", actual[0].Get("Sect"))
+		})
+	}
 }

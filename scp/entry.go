@@ -31,6 +31,10 @@ func (e Entry) String() string {
 	return e.key
 }
 
+func (e Entry) Key() string {
+	return e.key
+}
+
 func (e Entry) Get(field FieldName) string {
 	if e.fieldValues == nil {
 		return ""
@@ -38,8 +42,8 @@ func (e Entry) Get(field FieldName) string {
 	return e.fieldValues[field]
 }
 
-func (e Entry) PopulatedFields() []FieldName {
-	result := make([]FieldName, 0, len(e.fieldValues))
+func (e Entry) PopulatedFields() FieldSet {
+	result := make(FieldSet, 0, len(e.fieldValues))
 	for fieldName := range e.fieldValues {
 		result = append(result, fieldName)
 	}

@@ -76,7 +76,7 @@ func Read(r io.Reader, parser EntryParser) (*Database, error) {
 	return database, nil
 }
 
-// Find all strings in database that partially match the given string
+// FindStrings returns all strings in database that partially match the given string
 func (database Database) FindStrings(s string) ([]string, error) {
 	allMatches, err := database.find(s)
 	if err != nil {
@@ -91,7 +91,7 @@ func (database Database) FindStrings(s string) ([]string, error) {
 	return result, nil
 }
 
-// Find all strings in database that partially match the given string with detailed information on how the string matches.
+// FindAnnotated returns all strings in database that partially match the given string with detailed information on how the string matches.
 func (database Database) FindAnnotated(s string) ([]AnnotatedMatch, error) {
 	allMatches, err := database.find(s)
 	if err != nil {
@@ -101,6 +101,21 @@ func (database Database) FindAnnotated(s string) ([]AnnotatedMatch, error) {
 	result := make([]AnnotatedMatch, len(allMatches))
 	for i, m := range allMatches {
 		result[i] = m.annotation
+	}
+
+	return result, nil
+}
+
+// FindEntries returns all entries in database that partially match the given string.
+func (database Database) FindEntries(s string) ([]Entry, error) {
+	allMatches, err := database.find(s)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]Entry, len(allMatches))
+	for i, m := range allMatches {
+		result[i] = m.Entry
 	}
 
 	return result, nil
