@@ -5,6 +5,7 @@ import (
 	"strings"
 )
 
+// DefaultFieldSet defines the default field set that is used if no !!Order!! directive is present in the call history file.
 var DefaultFieldSet = NewFieldSet("Call", "Name", "Loc1", "Loc2", "Sect", "State", "CK", "BirthDate", "Exch1", "Misc", "UserText", "LastUpdateNote")
 
 const (
@@ -12,19 +13,26 @@ const (
 	FieldIgnore FieldName = ""
 )
 
+// ReadCallHistory creates a new Database and fills it from the call history that is read with the given reader.
 func ReadCallHistory(r io.Reader) (*Database, error) {
 	return Read(r, NewCallHistoryParser())
 }
 
+// CallHistoryParser is used to parse the entries in a call history file to fill the database.
 type CallHistoryParser struct {
 	fieldSet FieldSet
 }
 
+// NewCallHistoryParser creates a new CallHistoryParser that uses the DefaultFieldSet.
 func NewCallHistoryParser() *CallHistoryParser {
 	return &CallHistoryParser{
 		fieldSet: DefaultFieldSet,
 	}
 }
+
+// ParseEntry parses the given line and returns the corresponding entry.
+// If the line contains other information (for example a comment or a directive),
+// this method returns false in the second return value.
 func (p *CallHistoryParser) ParseEntry(line string) (Entry, bool) {
 	switch {
 	case strings.HasPrefix(line, "#"):
@@ -72,8 +80,10 @@ func (p *CallHistoryParser) parseEntry(line string) (Entry, bool) {
 	return newEntry(key, fieldValues), true
 }
 
+// FieldSet defines a set of fields used in a call history file.
 type FieldSet []FieldName
 
+// NewFieldSet creates a new FieldSet with the given field names.
 func NewFieldSet(fieldNames ...string) FieldSet {
 	result := make(FieldSet, len(fieldNames))
 	for i, rawName := range fieldNames {
@@ -82,6 +92,7 @@ func NewFieldSet(fieldNames ...string) FieldSet {
 	return result
 }
 
+// IndexOf returns the index of the field with the given name in this FieldSet, or -1 if the field is not in this FieldSet.
 func (s FieldSet) IndexOf(field FieldName) int {
 	field = FieldName(strings.TrimSpace(string(field)))
 	for i, name := range s {
@@ -92,10 +103,12 @@ func (s FieldSet) IndexOf(field FieldName) int {
 	return -1
 }
 
+// CallIndex returns the index of the Call field.
 func (s FieldSet) CallIndex() int {
 	return s.IndexOf(FieldCall)
 }
 
+// Get returns the field name at the given index.
 func (s FieldSet) Get(index int) FieldName {
 	if index < 0 || index >= len(s) {
 		return FieldIgnore

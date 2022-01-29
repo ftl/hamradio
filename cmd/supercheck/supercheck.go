@@ -3,9 +3,13 @@ supercheck uses the Super Check Partial callsign database from http://www.superc
 to find callsigns that are similar to a given string. The result is returned as a space separated
 list of callsigns. The given string must be at least three characters long.
 
+Instead of the Super Check Partial callsign database, this tool can also use call history files
+from N1MM Logger+ (available here: https://n1mmwp.hamdocs.com/mmfiles/categories/callhistory/).
+
 USAGE
 
 	supercheck <string>
+	supercheck -c <call history filename> -f <fieldname> <string>
 
 EXAMPLE
 
@@ -13,11 +17,17 @@ EXAMPLE
 
 	DL1NEO KD0NEO N0EO NE6O NE8O NE9O
 
+	> supercheck -c WAG.txt -f Exch1 dney
+
+	DL3NEY,B36 DK1EY,R09 DK8EY,R09 DN1ED,R09 DN1NE,C26 DN1YL,C25 DN4DE,O30 DN4EE,C26 DN6EE,H24 DN8EE,T01 DO7NE,S37 DB2NY,B05 DL7NY,L33 DL8NY,C12
+
 CONFIGURATION
 
 	supercheck stores a MASTER.SCP file in ~/.config/hamradio. The file is automatically updated if
 	there is a newer version available at http://www.supercheckpartial.com/MASTER.SCP.
 
+	The call history files must be downloaded manually from https://n1mmwp.hamdocs.com/mmfiles/categories/callhistory/
+	and stored in the local filesystem.
 */
 package main
 

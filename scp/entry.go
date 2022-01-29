@@ -9,13 +9,17 @@ import (
 type distance int
 type accuracy float64
 
+// Entry represents one entry in a Database.
 type Entry struct {
 	key         string
 	fingerprint fingerprint
 	fieldValues FieldValues
 }
 
+// FieldName defines the name of a field in an Entry.
 type FieldName string
+
+// FieldValues contains all fields of an Entry and their corresponding values.
 type FieldValues map[FieldName]string
 
 func newEntry(key string, fieldValues FieldValues) Entry {
@@ -31,10 +35,12 @@ func (e Entry) String() string {
 	return e.key
 }
 
+// Key returns the key of this Entry.
 func (e Entry) Key() string {
 	return e.key
 }
 
+// Get the value of the field with the given name.
 func (e Entry) Get(field FieldName) string {
 	if e.fieldValues == nil {
 		return ""
@@ -42,6 +48,9 @@ func (e Entry) Get(field FieldName) string {
 	return e.fieldValues[field]
 }
 
+// GetValues returns the values of the fields with the given names as slice.
+// The returned slice is of the same size as the number of field names. If a field
+// is not populated, the corresponding slice entry is empty.
 func (e Entry) GetValues(fields ...FieldName) []string {
 	result := make([]string, len(fields))
 	for i, field := range fields {
@@ -50,6 +59,7 @@ func (e Entry) GetValues(fields ...FieldName) []string {
 	return result
 }
 
+// PopulatedFields returns a FieldSet that contains all populated fields of this Entry.
 func (e Entry) PopulatedFields() FieldSet {
 	result := make(FieldSet, 0, len(e.fieldValues))
 	for fieldName := range e.fieldValues {
@@ -58,6 +68,8 @@ func (e Entry) PopulatedFields() FieldSet {
 	return result
 }
 
+// CompareTo compares this Entry's key with the key of the given Entry. It returns a measure
+// of similarity in form of the editing distance and the matching accuracy.
 func (e Entry) CompareTo(o Entry) (distance, accuracy) {
 	matrix := levenshtein.MatrixForStrings([]rune(e.key), []rune(o.key), levenshtein.DefaultOptions)
 
@@ -70,6 +82,7 @@ func (e Entry) CompareTo(o Entry) (distance, accuracy) {
 	return distance(dist), accuracy(ratio)
 }
 
+// EditTo provides the editing distance, matching accuracy, and the given Entry's key as AnnotatedMatch
 func (e Entry) EditTo(o Entry) (distance, accuracy, AnnotatedMatch) {
 	matrix := levenshtein.MatrixForStrings([]rune(e.key), []rune(o.key), levenshtein.DefaultOptions)
 
@@ -84,20 +97,27 @@ func (e Entry) EditTo(o Entry) (distance, accuracy, AnnotatedMatch) {
 	return distance(dist), accuracy(ratio), AnnotatedMatch
 }
 
+// MatchingOperation represents an editing operation that is applied to a key to transform it into another key.
 type MatchingOperation int
 
 const (
+	// NOP = no edit required, the part matches exactly
 	NOP MatchingOperation = iota
+	// Insert this part
 	Insert
+	// Delete this part
 	Delete
+	// Substitute this part
 	Substitute
 )
 
+// Part represents a part of a key with the corresponding editing operation.
 type Part struct {
 	OP    MatchingOperation
 	Value string
 }
 
+// AnnotatedMatch describes how a certain key matches to another key, using editing operations.
 type AnnotatedMatch []Part
 
 func newAnnotatedMatch(source, target string, script levenshtein.EditScript) AnnotatedMatch {
@@ -177,6 +197,7 @@ func (m AnnotatedMatch) String() string {
 	return result
 }
 
+// LongestPart returns the length of the longest matching part.
 func (m AnnotatedMatch) LongestPart() int {
 	result := 0
 	for _, e := range m {
@@ -190,10 +211,12 @@ func (m AnnotatedMatch) LongestPart() int {
 	return result
 }
 
+// EntryParser defines an abstraction for parsing a single entry from a given line in a file.
 type EntryParser interface {
 	ParseEntry(string) (Entry, bool)
 }
 
+// EntryParserFunc wraps a matching function into the EntryParser interface
 type EntryParserFunc func(string) (Entry, bool)
 
 func (f EntryParserFunc) ParseEntry(line string) (Entry, bool) {
