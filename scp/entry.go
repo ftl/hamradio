@@ -42,6 +42,14 @@ func (e Entry) Get(field FieldName) string {
 	return e.fieldValues[field]
 }
 
+func (e Entry) GetValues(fields ...FieldName) []string {
+	result := make([]string, len(fields))
+	for i, field := range fields {
+		result[i] = e.Get(field)
+	}
+	return result
+}
+
 func (e Entry) PopulatedFields() FieldSet {
 	result := make(FieldSet, 0, len(e.fieldValues))
 	for fieldName := range e.fieldValues {
