@@ -35,7 +35,7 @@ var SCPFormat = EntryParserFunc(func(line string) (Entry, bool) {
 	if strings.HasPrefix(line, "#") {
 		return Entry{}, false
 	}
-	return newEntry(line), true
+	return newEntry(line, nil), true
 })
 
 type match struct {
@@ -110,7 +110,7 @@ func (database Database) find(s string) ([]match, error) {
 	if len(s) < 3 {
 		return nil, nil
 	}
-	source := newEntry(s)
+	source := newEntry(s, nil)
 
 	matches := make(chan match, 100)
 	merged := make(chan []match)

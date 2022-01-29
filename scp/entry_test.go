@@ -9,10 +9,10 @@ import (
 )
 
 func TestEntrySet(t *testing.T) {
-	e1_1 := newEntry("one")
-	e1_2 := newEntry("one")
-	e2 := newEntry("two")
-	e3 := newEntry("abc")
+	e1_1 := newEntry("one", nil)
+	e1_2 := newEntry("one", nil)
+	e2 := newEntry("two", nil)
+	e3 := newEntry("abc", nil)
 
 	set := entrySet{}
 	entries := set.Entries()

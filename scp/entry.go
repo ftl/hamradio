@@ -12,17 +12,18 @@ type accuracy float64
 type Entry struct {
 	key         string
 	fingerprint fingerprint
-	fields      map[FieldName]string
+	fieldValues FieldValues
 }
 
 type FieldName string
+type FieldValues map[FieldName]string
 
-func newEntry(key string) Entry {
+func newEntry(key string, fieldValues FieldValues) Entry {
 	key = strings.ToUpper(strings.TrimSpace(key))
 	return Entry{
 		key:         key,
 		fingerprint: extractFingerprint(key),
-		fields:      make(map[FieldName]string),
+		fieldValues: fieldValues,
 	}
 }
 
@@ -31,7 +32,18 @@ func (e Entry) String() string {
 }
 
 func (e Entry) Get(field FieldName) string {
-	return e.fields[field]
+	if e.fieldValues == nil {
+		return ""
+	}
+	return e.fieldValues[field]
+}
+
+func (e Entry) PopulatedFields() []FieldName {
+	result := make([]FieldName, 0, len(e.fieldValues))
+	for fieldName := range e.fieldValues {
+		result = append(result, fieldName)
+	}
+	return result
 }
 
 func (e Entry) CompareTo(o Entry) (distance, accuracy) {
