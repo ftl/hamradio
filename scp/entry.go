@@ -82,8 +82,8 @@ func (e Entry) CompareTo(o Entry) (distance, accuracy) {
 	return distance(dist), accuracy(ratio)
 }
 
-// EditTo provides the editing distance, matching accuracy, and the given Entry's key as AnnotatedMatch
-func (e Entry) EditTo(o Entry) (distance, accuracy, AnnotatedMatch) {
+// EditTo provides the editing distance, matching accuracy, and the given Entry's key as MatchingAssembly
+func (e Entry) EditTo(o Entry) (distance, accuracy, MatchingAssembly) {
 	matrix := levenshtein.MatrixForStrings([]rune(e.key), []rune(o.key), levenshtein.DefaultOptions)
 
 	dist := levenshtein.DistanceForMatrix(matrix)
@@ -92,9 +92,9 @@ func (e Entry) EditTo(o Entry) (distance, accuracy, AnnotatedMatch) {
 		ratio = 1.0 / ratio
 	}
 	script := levenshtein.EditScriptForMatrix(matrix, levenshtein.DefaultOptions)
-	AnnotatedMatch := newAnnotatedMatch(e.key, o.key, script)
+	matchingAssembly := newMatchingAssembly(e.key, o.key, script)
 
-	return distance(dist), accuracy(ratio), AnnotatedMatch
+	return distance(dist), accuracy(ratio), matchingAssembly
 }
 
 // MatchingOperation represents an editing operation that is applied to a key to transform it into another key.
@@ -112,32 +112,32 @@ const (
 )
 
 // Part represents a part of a key with the corresponding editing operation.
-type Part struct {
+type MatchingPart struct {
 	OP    MatchingOperation
 	Value string
 }
 
-// AnnotatedMatch describes how a certain key matches to another key, using editing operations.
-type AnnotatedMatch []Part
+// MatchingAssembly describes how a certain key matches to another key, using editing operations.
+type MatchingAssembly []MatchingPart
 
-func newAnnotatedMatch(source, target string, script levenshtein.EditScript) AnnotatedMatch {
-	rawScript := make(AnnotatedMatch, 0, len(script))
+func newMatchingAssembly(source, target string, script levenshtein.EditScript) MatchingAssembly {
+	rawScript := make(MatchingAssembly, 0, len(script))
 
-	lastPart := Part{NOP, ""}
+	lastPart := MatchingPart{NOP, ""}
 	sourceIndex := 0
 	targetIndex := 0
-	var currentPart Part
+	var currentPart MatchingPart
 	for _, lop := range script {
 		switch lop {
 		case levenshtein.Match:
-			currentPart = Part{NOP, string(source[sourceIndex])}
+			currentPart = MatchingPart{NOP, string(source[sourceIndex])}
 			sourceIndex++
 			targetIndex++
 		case levenshtein.Ins:
-			currentPart = Part{Insert, string(target[targetIndex])}
+			currentPart = MatchingPart{Insert, string(target[targetIndex])}
 			targetIndex++
 		case levenshtein.Del:
-			currentPart = Part{Delete, string(source[sourceIndex])}
+			currentPart = MatchingPart{Delete, string(source[sourceIndex])}
 			sourceIndex++
 		}
 
@@ -159,7 +159,7 @@ func newAnnotatedMatch(source, target string, script levenshtein.EditScript) Ann
 		return nil
 	}
 
-	result := make(AnnotatedMatch, 0, len(rawScript))
+	result := make(MatchingAssembly, 0, len(rawScript))
 	result = append(result, rawScript[0])
 	for i := 1; i < len(rawScript); i++ {
 		lastPart = result[len(result)-1]
@@ -172,22 +172,22 @@ func newAnnotatedMatch(source, target string, script levenshtein.EditScript) Ann
 		lastLen := len(lastPart.Value)
 		currentLen := len(currentPart.Value)
 		if lastLen > currentLen {
-			result[len(result)-1] = Part{Substitute, lastPart.Value[:currentLen]}
-			result = append(result, Part{Insert, lastPart.Value[currentLen:]})
+			result[len(result)-1] = MatchingPart{Substitute, lastPart.Value[:currentLen]}
+			result = append(result, MatchingPart{Insert, lastPart.Value[currentLen:]})
 			continue
 		}
 		if lastLen < currentLen {
-			result[len(result)-1] = Part{Substitute, lastPart.Value}
-			result = append(result, Part{Delete, currentPart.Value[lastLen:]})
+			result[len(result)-1] = MatchingPart{Substitute, lastPart.Value}
+			result = append(result, MatchingPart{Delete, currentPart.Value[lastLen:]})
 			continue
 		}
-		result[len(result)-1] = Part{Substitute, lastPart.Value}
+		result[len(result)-1] = MatchingPart{Substitute, lastPart.Value}
 	}
 
 	return result
 }
 
-func (m AnnotatedMatch) String() string {
+func (m MatchingAssembly) String() string {
 	var result string
 	for _, e := range m {
 		if e.OP != Delete {
@@ -198,7 +198,7 @@ func (m AnnotatedMatch) String() string {
 }
 
 // LongestPart returns the length of the longest matching part.
-func (m AnnotatedMatch) LongestPart() int {
+func (m MatchingAssembly) LongestPart() int {
 	result := 0
 	for _, e := range m {
 		if e.OP != NOP {

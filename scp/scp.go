@@ -38,11 +38,30 @@ var SCPFormat = EntryParserFunc(func(line string) (Entry, bool) {
 	return newEntry(line, nil), true
 })
 
-type match struct {
+type Match struct {
 	Entry
-	distance   distance
-	accuracy   accuracy
-	annotation AnnotatedMatch
+	distance distance
+	accuracy accuracy
+	Assembly MatchingAssembly
+}
+
+// LessThan returns true if this match is less than the other based on the default ordering for matches (the better the lesser).
+func (m Match) LessThan(o Match) bool {
+	mLongestPart := m.Assembly.LongestPart()
+	oLongestPart := o.Assembly.LongestPart()
+	if mLongestPart != oLongestPart {
+		return mLongestPart > oLongestPart
+	}
+	if m.accuracy != o.accuracy {
+		return m.accuracy > o.accuracy
+	}
+	if m.distance != o.distance {
+		return m.distance < o.distance
+	}
+	if len(m.key) != len(o.key) {
+		return len(m.key) < len(o.key)
+	}
+	return m.key < o.key
 }
 
 // Read the database from a reader using the SCP format.
@@ -78,7 +97,7 @@ func Read(r io.Reader, parser EntryParser) (*Database, error) {
 
 // FindStrings returns all strings in database that partially match the given string
 func (database Database) FindStrings(s string) ([]string, error) {
-	allMatches, err := database.find(s)
+	allMatches, err := database.Find(s)
 	if err != nil {
 		return nil, err
 	}
@@ -91,44 +110,15 @@ func (database Database) FindStrings(s string) ([]string, error) {
 	return result, nil
 }
 
-// FindAnnotated returns all strings in database that partially match the given string with detailed information on how the string matches.
-func (database Database) FindAnnotated(s string) ([]AnnotatedMatch, error) {
-	allMatches, err := database.find(s)
-	if err != nil {
-		return nil, err
-	}
-
-	result := make([]AnnotatedMatch, len(allMatches))
-	for i, m := range allMatches {
-		result[i] = m.annotation
-	}
-
-	return result, nil
-}
-
-// FindEntries returns all entries in database that partially match the given string.
-func (database Database) FindEntries(s string) ([]Entry, error) {
-	allMatches, err := database.find(s)
-	if err != nil {
-		return nil, err
-	}
-
-	result := make([]Entry, len(allMatches))
-	for i, m := range allMatches {
-		result[i] = m.Entry
-	}
-
-	return result, nil
-}
-
-func (database Database) find(s string) ([]match, error) {
+// Find returns all entries in database that are similar to the given string.
+func (database Database) Find(s string) ([]Match, error) {
 	if len(s) < 3 {
 		return nil, nil
 	}
 	source := newEntry(s, nil)
 
-	matches := make(chan match, 100)
-	merged := make(chan []match)
+	matches := make(chan Match, 100)
+	merged := make(chan []Match)
 	waiter := &sync.WaitGroup{}
 
 	byteMap := make(map[byte]bool)
@@ -154,21 +144,21 @@ func (database Database) find(s string) ([]match, error) {
 	return result, nil
 }
 
-func findMatches(matches chan<- match, input Entry, entries entrySet, waiter *sync.WaitGroup) {
+func findMatches(matches chan<- Match, input Entry, entries entrySet, waiter *sync.WaitGroup) {
 	defer waiter.Done()
 	const accuracyThreshold = 0.65
 
 	entries.Do(func(e Entry) {
-		distance, accuracy, editScript := input.EditTo(e)
+		distance, accuracy, assembly := input.EditTo(e)
 		if accuracy >= accuracyThreshold {
-			matches <- match{e, distance, accuracy, editScript}
+			matches <- Match{e, distance, accuracy, assembly}
 		}
 	})
 }
 
-func collectMatches(result chan<- []match, matches <-chan match) {
-	allMatches := make([]match, 0)
-	matchSet := make(map[string]match)
+func collectMatches(result chan<- []Match, matches <-chan Match) {
+	allMatches := make([]Match, 0)
+	matchSet := make(map[string]Match)
 	for match := range matches {
 		if _, ok := matchSet[match.key]; !ok {
 			matchSet[match.key] = match
@@ -176,23 +166,7 @@ func collectMatches(result chan<- []match, matches <-chan match) {
 		}
 	}
 	sort.Slice(allMatches, func(i, j int) bool {
-		iMatch := allMatches[i]
-		jMatch := allMatches[j]
-		iLongestPart := iMatch.annotation.LongestPart()
-		jLongestPart := jMatch.annotation.LongestPart()
-		if iLongestPart != jLongestPart {
-			return iLongestPart > jLongestPart
-		}
-		if iMatch.accuracy != jMatch.accuracy {
-			return iMatch.accuracy > jMatch.accuracy
-		}
-		if iMatch.distance != jMatch.distance {
-			return iMatch.distance < jMatch.distance
-		}
-		if len(iMatch.key) != len(jMatch.key) {
-			return len(iMatch.key) < len(jMatch.key)
-		}
-		return iMatch.key < jMatch.key
+		return allMatches[i].LessThan(allMatches[j])
 	})
 	result <- allMatches
 }

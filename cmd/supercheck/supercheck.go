@@ -71,7 +71,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	entries, err := database.FindEntries(options.Args.Input[0])
+	matches, err := database.Find(options.Args.Input[0])
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -81,11 +81,11 @@ func main() {
 		fieldSet[i] = scp.FieldName(field)
 	}
 
-	matches := make([]string, len(entries))
-	for i, entry := range entries {
-		match := entry.Key()
+	results := make([]string, len(matches))
+	for i, match := range matches {
+		result := match.Key()
 		if options.CallHistoryFilename != "" {
-			match = fmt.Sprintf("%s,%s", match, strings.Join(entry.GetValues(fieldSet...), ","))
+			result = fmt.Sprintf("%s,%s", match, strings.Join(match.GetValues(fieldSet...), ","))
 		}
 		var j int
 		if options.Reverse {
@@ -93,14 +93,14 @@ func main() {
 		} else {
 			j = i
 		}
-		matches[j] = match
+		results[j] = result
 	}
 
 	separator := " "
 	if options.Lines {
 		separator = "\n"
 	}
-	fmt.Println(strings.Join(matches, separator))
+	fmt.Println(strings.Join(results, separator))
 }
 
 func loadMasterScp() (*scp.Database, error) {

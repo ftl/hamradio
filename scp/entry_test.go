@@ -45,21 +45,21 @@ func TestNewAnnotatedMatch(t *testing.T) {
 	tt := []struct {
 		input    string
 		entry    string
-		expected AnnotatedMatch
+		expected MatchingAssembly
 	}{
-		{"abcd", "abcd", AnnotatedMatch{Part{NOP, "abcd"}}},
-		{"abc", "abcd", AnnotatedMatch{Part{NOP, "abc"}, Part{Insert, "d"}}},
-		{"abcd", "abc", AnnotatedMatch{Part{NOP, "abc"}, Part{Delete, "d"}}},
-		{"efgd", "abcd", AnnotatedMatch{Part{Substitute, "abc"}, Part{NOP, "d"}}},
-		{"efghd", "abcd", AnnotatedMatch{Part{Substitute, "abc"}, Part{Delete, "h"}, Part{NOP, "d"}}},
-		{"aefgd", "abcd", AnnotatedMatch{Part{NOP, "a"}, Part{Substitute, "bc"}, Part{Delete, "g"}, Part{NOP, "d"}}},
+		{"abcd", "abcd", MatchingAssembly{MatchingPart{NOP, "abcd"}}},
+		{"abc", "abcd", MatchingAssembly{MatchingPart{NOP, "abc"}, MatchingPart{Insert, "d"}}},
+		{"abcd", "abc", MatchingAssembly{MatchingPart{NOP, "abc"}, MatchingPart{Delete, "d"}}},
+		{"efgd", "abcd", MatchingAssembly{MatchingPart{Substitute, "abc"}, MatchingPart{NOP, "d"}}},
+		{"efghd", "abcd", MatchingAssembly{MatchingPart{Substitute, "abc"}, MatchingPart{Delete, "h"}, MatchingPart{NOP, "d"}}},
+		{"aefgd", "abcd", MatchingAssembly{MatchingPart{NOP, "a"}, MatchingPart{Substitute, "bc"}, MatchingPart{Delete, "g"}, MatchingPart{NOP, "d"}}},
 	}
 	for _, tc := range tt {
 		t.Run(fmt.Sprintf("%s -> %s", tc.input, tc.entry), func(t *testing.T) {
 			matrix := levenshtein.MatrixForStrings([]rune(tc.input), []rune(tc.entry), levenshtein.DefaultOptions)
 			script := levenshtein.EditScriptForMatrix(matrix, levenshtein.DefaultOptions)
 
-			actual := newAnnotatedMatch(tc.input, tc.entry, script)
+			actual := newMatchingAssembly(tc.input, tc.entry, script)
 			assert.Equal(t, tc.expected, actual)
 			assert.Equal(t, tc.entry, actual.String())
 		})

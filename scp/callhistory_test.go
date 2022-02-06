@@ -81,7 +81,7 @@ func TestLoadCallHistoryFromFile(t *testing.T) {
 			file.Close()
 			require.NoError(t, err)
 
-			actual, err := database.FindEntries("dl3ney")
+			actual, err := database.Find("dl3ney")
 
 			assert.NoError(t, err)
 			assert.Equal(t, 1, len(actual))
