@@ -53,6 +53,8 @@ func TestNewAnnotatedMatch(t *testing.T) {
 		{"efgd", "abcd", MatchingAssembly{MatchingPart{Substitute, "abc"}, MatchingPart{NOP, "d"}}},
 		{"efghd", "abcd", MatchingAssembly{MatchingPart{Substitute, "abc"}, MatchingPart{Delete, "h"}, MatchingPart{NOP, "d"}}},
 		{"aefgd", "abcd", MatchingAssembly{MatchingPart{NOP, "a"}, MatchingPart{Substitute, "bc"}, MatchingPart{Delete, "g"}, MatchingPart{NOP, "d"}}},
+		{"aady", "aaney", MatchingAssembly{MatchingPart{NOP, "aa"}, MatchingPart{FalseFriend, "n"}, MatchingPart{Insert, "e"}, MatchingPart{NOP, "y"}}},
+		{"aaney", "aady", MatchingAssembly{MatchingPart{NOP, "aa"}, MatchingPart{Substitute, "d"}, MatchingPart{Delete, "e"}, MatchingPart{NOP, "y"}}},
 	}
 	for _, tc := range tt {
 		t.Run(fmt.Sprintf("%s -> %s", tc.input, tc.entry), func(t *testing.T) {
@@ -64,4 +66,15 @@ func TestNewAnnotatedMatch(t *testing.T) {
 			assert.Equal(t, tc.entry, actual.String())
 		})
 	}
+}
+
+func TestPreferFalseFriends(t *testing.T) {
+	input := newEntry("dl3dy", nil)
+	entry := newEntry("dl3ney", nil)
+	d, a, m := input.EditTo(entry)
+
+	assert.Equal(t, distance(2), d)
+	assert.Equal(t, accuracy(0.8181818181818182), a)
+	assert.Equal(t, MatchingAssembly{MatchingPart{NOP, "DL3"}, MatchingPart{FalseFriend, "N"}, MatchingPart{Insert, "E"}, MatchingPart{NOP, "Y"}}, m)
+	assert.True(t, m.ContainsFalseFriend())
 }

@@ -68,31 +68,39 @@ func (e Entry) PopulatedFields() FieldSet {
 	return result
 }
 
+var levenshteinOptions = levenshtein.Options{
+	InsCost: 1,
+	DelCost: 100,
+	SubCost: 2,
+	Matches: levenshtein.IdenticalRunes,
+}
+
 // CompareTo compares this Entry's key with the key of the given Entry. It returns a measure
 // of similarity in form of the editing distance and the matching accuracy.
 func (e Entry) CompareTo(o Entry) (distance, accuracy) {
-	matrix := levenshtein.MatrixForStrings([]rune(e.key), []rune(o.key), levenshtein.DefaultOptions)
-
-	dist := levenshtein.DistanceForMatrix(matrix)
-	ratio := levenshtein.RatioForMatrix(matrix)
-	if ratio > 1 {
-		ratio = 1.0 / ratio
-	}
-
-	return distance(dist), accuracy(ratio)
+	d, a, _ := e.EditTo(o)
+	return d, a
 }
 
 // EditTo provides the editing distance, matching accuracy, and the given Entry's key as MatchingAssembly
 func (e Entry) EditTo(o Entry) (distance, accuracy, MatchingAssembly) {
-	matrix := levenshtein.MatrixForStrings([]rune(e.key), []rune(o.key), levenshtein.DefaultOptions)
+	matrix := levenshtein.MatrixForStrings([]rune(e.key), []rune(o.key), levenshteinOptions)
+	script := levenshtein.EditScriptForMatrix(matrix, levenshteinOptions)
+	matchingAssembly := newMatchingAssembly(e.key, o.key, script)
+
+	sourcelength := len(matrix) - 1
+	targetlength := len(matrix[0]) - 1
+	sum := sourcelength + targetlength
 
 	dist := levenshtein.DistanceForMatrix(matrix)
-	ratio := levenshtein.RatioForMatrix(matrix)
-	if ratio > 1 {
-		ratio = 1.0 / ratio
+	if matchingAssembly.ContainsFalseFriend() {
+		dist--
 	}
-	script := levenshtein.EditScriptForMatrix(matrix, levenshtein.DefaultOptions)
-	matchingAssembly := newMatchingAssembly(e.key, o.key, script)
+
+	var ratio float64
+	if sum != 0 {
+		ratio = float64(sum-dist) / float64(sum)
+	}
 
 	return distance(dist), accuracy(ratio), matchingAssembly
 }
@@ -109,6 +117,8 @@ const (
 	Delete
 	// Substitute this part
 	Substitute
+	// FalseFriend is a subsitute that is close in CW to this part
+	FalseFriend
 )
 
 // Part represents a part of a key with the corresponding editing operation.
@@ -139,6 +149,13 @@ func newMatchingAssembly(source, target string, script levenshtein.EditScript) M
 		case levenshtein.Del:
 			currentPart = MatchingPart{Delete, string(source[sourceIndex])}
 			sourceIndex++
+		case levenshtein.Sub:
+			currentPart = MatchingPart{Substitute, string(target[targetIndex])}
+			if isFalseFriend(string(source[sourceIndex]), string(target[targetIndex])) {
+				currentPart.OP = FalseFriend
+			}
+			sourceIndex++
+			targetIndex++
 		}
 
 		if lastPart.OP == currentPart.OP {
@@ -162,7 +179,8 @@ func newMatchingAssembly(source, target string, script levenshtein.EditScript) M
 	result := make(MatchingAssembly, 0, len(rawScript))
 	result = append(result, rawScript[0])
 	for i := 1; i < len(rawScript); i++ {
-		lastPart = result[len(result)-1]
+		resultIndex := len(result) - 1
+		lastPart = result[resultIndex]
 		currentPart = rawScript[i]
 		if lastPart.OP != Insert || currentPart.OP != Delete {
 			result = append(result, currentPart)
@@ -171,17 +189,27 @@ func newMatchingAssembly(source, target string, script levenshtein.EditScript) M
 
 		lastLen := len(lastPart.Value)
 		currentLen := len(currentPart.Value)
+		var headValue string
+		var substitution, tail MatchingPart
 		if lastLen > currentLen {
-			result[len(result)-1] = MatchingPart{Substitute, lastPart.Value[:currentLen]}
-			result = append(result, MatchingPart{Insert, lastPart.Value[currentLen:]})
-			continue
+			headValue = currentPart.Value
+			substitution = MatchingPart{Substitute, lastPart.Value[:currentLen]}
+			tail = MatchingPart{Insert, lastPart.Value[currentLen:]}
+		} else if lastLen < currentLen {
+			headValue = currentPart.Value[:lastLen]
+			substitution = MatchingPart{Substitute, lastPart.Value}
+			tail = MatchingPart{Delete, currentPart.Value[lastLen:]}
+		} else {
+			headValue = currentPart.Value
+			substitution = MatchingPart{Substitute, lastPart.Value}
 		}
-		if lastLen < currentLen {
-			result[len(result)-1] = MatchingPart{Substitute, lastPart.Value}
-			result = append(result, MatchingPart{Delete, currentPart.Value[lastLen:]})
-			continue
+		if isFalseFriend(headValue, substitution.Value) {
+			substitution.OP = FalseFriend
 		}
-		result[len(result)-1] = MatchingPart{Substitute, lastPart.Value}
+		result[resultIndex] = substitution
+		if tail.OP != NOP {
+			result = append(result, tail)
+		}
 	}
 
 	return result
@@ -209,6 +237,39 @@ func (m MatchingAssembly) LongestPart() int {
 		}
 	}
 	return result
+}
+
+// ContainsFalseFriend indicates if this matching assembly contains a false friend.
+func (m MatchingAssembly) ContainsFalseFriend() bool {
+	for _, e := range m {
+		if e.OP == FalseFriend {
+			return true
+		}
+	}
+	return false
+}
+
+var falseFriends = map[string][]string{
+	"b": {"d", "6"},
+	"d": {"n", "b"},
+	"h": {"s", "5"},
+	"j": {"1"},
+	"s": {"h"},
+	"v": {"4"},
+	"1": {"j"},
+	"4": {"v"},
+	"5": {"h"},
+	"6": {"b"},
+}
+
+func isFalseFriend(s, t string) bool {
+	s, t = strings.ToLower(s), strings.ToLower(t)
+	for _, friend := range falseFriends[s] {
+		if friend == t {
+			return true
+		}
+	}
+	return false
 }
 
 // EntryParser defines an abstraction for parsing a single entry from a given line in a file.

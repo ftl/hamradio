@@ -47,21 +47,22 @@ type Match struct {
 
 // LessThan returns true if this match is less than the other based on the default ordering for matches (the better the lesser).
 func (m Match) LessThan(o Match) bool {
+	if m.accuracy != o.accuracy {
+		return m.accuracy > o.accuracy
+	}
 	mLongestPart := m.Assembly.LongestPart()
 	oLongestPart := o.Assembly.LongestPart()
 	if mLongestPart != oLongestPart {
 		return mLongestPart > oLongestPart
 	}
-	if m.accuracy != o.accuracy {
-		return m.accuracy > o.accuracy
-	}
-	if m.distance != o.distance {
-		return m.distance < o.distance
-	}
 	if len(m.key) != len(o.key) {
 		return len(m.key) < len(o.key)
 	}
 	return m.key < o.key
+}
+
+func (m Match) Accuracy() float64 {
+	return float64(m.accuracy)
 }
 
 // Read the database from a reader using the SCP format.
