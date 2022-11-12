@@ -16,6 +16,15 @@ type Locator [8]byte
 
 var parseLocatorExpression = regexp.MustCompile("([A-R]{2})(?:([0-9]{2})(?:([A-X]{2})([0-9]{2})?)?)?")
 
+// MustParse parses a maidenhead locator from a string and panicks if the given string is not valid.
+func MustParse(s string) Locator {
+	result, err := Parse(s)
+	if err != nil {
+		panic(err)
+	}
+	return result
+}
+
 // Parse parses a maidenhead locator from a string.
 func Parse(s string) (Locator, error) {
 	normalString := strings.ToUpper(strings.TrimSpace(s))
