@@ -18,6 +18,7 @@ func TestParse(t *testing.T) {
 		{"K/DL1ABC", Callsign{Prefix: "K", BaseCall: "DL1ABC", Suffix: "", WorkingCondition: ""}, true},
 		{"K/DL1ABC/9", Callsign{Prefix: "K", BaseCall: "DL1ABC", Suffix: "9", WorkingCondition: ""}, true},
 		{"DL1ABC", Callsign{Prefix: "", BaseCall: "DL1ABC", Suffix: "", WorkingCondition: ""}, true},
+		{"3DA0RU", Callsign{Prefix: "", BaseCall: "3DA0RU", Suffix: "", WorkingCondition: ""}, true},
 		{"", Callsign{}, false},
 		{"DLABC", Callsign{}, false},
 	}
