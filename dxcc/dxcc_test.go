@@ -26,6 +26,8 @@ func TestPrefixes_Find(t *testing.T) {
 		Prefix{Prefix: "P2"},
 		Prefix{Prefix: "P2"},
 		Prefix{Prefix: "P3AB", NeedsExactMatch: true},
+		Prefix{Prefix: "P4"},
+		Prefix{Prefix: "P4A", NeedsExactMatch: true},
 	)
 
 	testCases := []struct {
@@ -38,6 +40,8 @@ func TestPrefixes_Find(t *testing.T) {
 		{"P3AB", "P3AB", 1},
 		{"P3A", "", 0},
 		{"P3ABC", "", 0},
+		{"P4A", "P4A", 1},
+		{"P4AB", "P4", 1},
 	}
 	for _, testCase := range testCases {
 		foundPrefixes, _ := prefixes.Find(testCase.value)

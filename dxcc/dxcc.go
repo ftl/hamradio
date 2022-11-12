@@ -72,7 +72,9 @@ func (prefixes Prefixes) Find(s string) ([]Prefix, bool) {
 					result = append(result, prefix)
 				}
 			}
-			return result, true
+			if len(result) > 0 {
+				return result, true
+			}
 		}
 		_, lastRuneSize := utf8.DecodeLastRuneInString(normalString)
 		normalString = normalString[:len(normalString)-lastRuneSize]
