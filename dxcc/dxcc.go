@@ -43,6 +43,22 @@ type ITUZone int
 // TimeOffset represents a time offset to UTC.
 type TimeOffset float64
 
+// DefaultPrefixes returns the default Prefixes instance. It optionally loads the latest update on demand.
+func DefaultPrefixes(updateOnDemand bool) (*Prefixes, bool, error) {
+	localFilename, err := LocalFilename()
+	if err != nil {
+		return nil, false, err
+	}
+
+	updated := false
+	if updateOnDemand {
+		updated, _ = Update(DefaultURL, localFilename)
+	}
+
+	result, err := LoadLocal(localFilename)
+	return result, updated, err
+}
+
 // NewPrefixes creates a new instance of prefixes.
 func NewPrefixes() *Prefixes {
 	return &Prefixes{make(map[string][]Prefix)}
