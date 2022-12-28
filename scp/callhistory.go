@@ -9,8 +9,10 @@ import (
 var DefaultFieldSet = NewFieldSet("Call", "Name", "Loc1", "Loc2", "Sect", "State", "CK", "BirthDate", "Exch1", "Misc", "UserText", "LastUpdateNote")
 
 const (
-	FieldCall   FieldName = "Call"
-	FieldIgnore FieldName = ""
+	FieldCall     FieldName = "Call"
+	FieldUserName FieldName = "Name"
+	FieldUserText FieldName = "UserText"
+	FieldIgnore   FieldName = ""
 )
 
 // ReadCallHistory creates a new Database and fills it from the call history that is read with the given reader.
