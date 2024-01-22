@@ -18,7 +18,7 @@ type Callsign struct {
 	WorkingCondition string
 }
 
-var parseCallsignExpression = regexp.MustCompile(`\b(?:([A-Z0-9]+)/)?(([A-Z]|[A-Z][A-Z]|[0-9][A-Z]|[0-9][A-Z][A-Z])[0-9][A-Z0-9]*[A-Z])(?:/([A-Z0-9]+))?(?:/(P|A|M|MM|AM))?\b`)
+var parseCallsignExpression = regexp.MustCompile(`\b(?:([A-Z0-9]+)/)?((?:[A-Z]|[A-Z][A-Z]|[0-9][A-Z]|[0-9][A-Z][A-Z])[0-9][A-Z0-9]*[A-Z])(?:/([A-Z0-9]+))?(?:/(P|A|M|MM|AM))?\b`)
 var callsignWorkingConditions = map[string]bool{
 	"P":  true,
 	"A":  true,
