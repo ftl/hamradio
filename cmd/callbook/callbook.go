@@ -143,7 +143,10 @@ func loadCallbooks(config cfg.Configuration) map[string]callbook.Callbook {
 	callbooks := make(map[string]callbook.Callbook)
 	for _, param := range params {
 		callbook, err := newCallbook(param.configKey, config, param.factory)
-		if err == nil {
+		if err != nil {
+			panic(fmt.Errorf("cannot create callbook %s: %v", param.name, err))
+		}
+		if callbook != nil {
 			callbooks[param.name] = callbook
 		}
 	}
@@ -167,6 +170,9 @@ func newCallbook(configPath cfg.Key, config cfg.Configuration, factory callbook.
 func lookup(callsign string, callbooks map[string]callbook.Callbook) map[string]callbook.Info {
 	infos := make(map[string]callbook.Info)
 	for name, callbook := range callbooks {
+		if callbook == nil {
+			panic(fmt.Errorf("callbook %s is nil", name))
+		}
 		info, err := callbook.Lookup(callsign)
 		if err == nil {
 			infos[name] = info
