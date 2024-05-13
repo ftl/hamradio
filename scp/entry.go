@@ -69,7 +69,7 @@ func (e Entry) PopulatedFields() FieldSet {
 }
 
 var levenshteinOptions = levenshtein.Options{
-	InsCost: 1,
+	InsCost: 2,
 	DelCost: 100,
 	SubCost: 2,
 	Matches: levenshtein.IdenticalRunes,
@@ -93,9 +93,8 @@ func (e Entry) EditTo(o Entry) (distance, accuracy, MatchingAssembly) {
 	sum := sourcelength + targetlength
 
 	dist := levenshtein.DistanceForMatrix(matrix)
-	if matchingAssembly.ContainsFalseFriend() {
-		dist--
-	}
+	// a substitude counts as distance 2, the following makes false friends better substitudes
+	dist -= matchingAssembly.FalseFriendsCount()
 
 	var ratio float64
 	if sum != 0 {
@@ -239,27 +238,48 @@ func (m MatchingAssembly) LongestPart() int {
 	return result
 }
 
-// ContainsFalseFriend indicates if this matching assembly contains a false friend.
-func (m MatchingAssembly) ContainsFalseFriend() bool {
+// FalseFriendCount returns the number of false friends of this matching assembly
+func (m MatchingAssembly) FalseFriendsCount() int {
+	result := 0
 	for _, e := range m {
 		if e.OP == FalseFriend {
-			return true
+			result++
 		}
 	}
-	return false
+	return result
+}
+
+// ContainsFalseFriend indicates if this matching assembly contains a false friend.
+func (m MatchingAssembly) ContainsFalseFriend() bool {
+	return m.FalseFriendsCount() > 0
 }
 
 var falseFriends = map[string][]string{
+	"a": {"u"},
 	"b": {"d", "6"},
-	"d": {"n", "b"},
+	"d": {"b"},
+	"e": {"i"},
+	"g": {"p", "z"},
 	"h": {"s", "5"},
+	"i": {"s"},
 	"j": {"1"},
+	"k": {"c"},
+	"m": {"w", "g"},
+	"n": {"d", "r"},
+	"r": {"f", "l"},
 	"s": {"h"},
+	"t": {"a", "n"},
+	"u": {"v", "f"},
 	"v": {"4"},
+	"w": {"p"},
 	"1": {"j"},
+	"2": {"3"},
+	"3": {"2"},
 	"4": {"v"},
 	"5": {"h"},
 	"6": {"b"},
+	"7": {"8"},
+	"8": {"7"},
 }
 
 func isFalseFriend(s, t string) bool {
