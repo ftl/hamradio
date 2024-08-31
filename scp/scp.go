@@ -4,7 +4,7 @@ database stored in the SCP format. The package also provides functions to downlo
 store and update a MASTER.SCP file. The default remote location for the MASTER.SCP file
 is http://www.supercheckpartial.com/MASTER.SCP.
 
-File Format Description
+# File Format Description
 
 1. The file is in plain text format (ASCII).
 2. Each line contains one callsign.
@@ -28,7 +28,8 @@ const DefaultLocalFilename = ".config/hamradio/MASTER.SCP"
 
 // Database represents the SCP database.
 type Database struct {
-	items map[byte]entrySet
+	fieldSet FieldSet
+	items    map[byte]entrySet
 }
 
 var SCPFormat = EntryParserFunc(func(line string) (Entry, bool) {
@@ -72,7 +73,10 @@ func ReadSCP(r io.Reader) (*Database, error) {
 
 // Read the database from a reader unsing the given entry parser.
 func Read(r io.Reader, parser EntryParser) (*Database, error) {
-	database := &Database{make(map[byte]entrySet)}
+	database := &Database{
+		items:    make(map[byte]entrySet),
+		fieldSet: FieldSet{},
+	}
 	lines := bufio.NewScanner(r)
 	for lines.Scan() {
 		line := strings.TrimSpace(lines.Text())
@@ -94,6 +98,11 @@ func Read(r io.Reader, parser EntryParser) (*Database, error) {
 	}
 
 	return database, nil
+}
+
+// FieldSet returns the set of additional data fields available per entry.
+func (database Database) FieldSet() FieldSet {
+	return database.fieldSet
 }
 
 // FindStrings returns all strings in database that partially match the given string

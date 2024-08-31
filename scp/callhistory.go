@@ -17,7 +17,10 @@ const (
 
 // ReadCallHistory creates a new Database and fills it from the call history that is read with the given reader.
 func ReadCallHistory(r io.Reader) (*Database, error) {
-	return Read(r, NewCallHistoryParser())
+	parser := NewCallHistoryParser()
+	result, err := Read(r, parser)
+	result.fieldSet = parser.fieldSet
+	return result, err
 }
 
 // CallHistoryParser is used to parse the entries in a call history file to fill the database.
@@ -116,4 +119,15 @@ func (s FieldSet) Get(index int) FieldName {
 		return FieldIgnore
 	}
 	return s[index]
+}
+
+// UsableNames returns a slice of usable field names (excluding Call and empty field names).
+func (s FieldSet) UsableNames() []FieldName {
+	result := make([]FieldName, 0, len(s))
+	for _, fieldName := range s {
+		if fieldName != FieldIgnore && fieldName != FieldCall {
+			result = append(result, fieldName)
+		}
+	}
+	return result
 }
