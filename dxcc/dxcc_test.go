@@ -28,23 +28,28 @@ func TestPrefixes_Find(t *testing.T) {
 		Prefix{Prefix: "P3AB", NeedsExactMatch: true},
 		Prefix{Prefix: "P4"},
 		Prefix{Prefix: "P4A", NeedsExactMatch: true},
+		Prefix{Prefix: "P5"},
+		Prefix{Prefix: "P5B", NotARRLCompliant: true},
 	)
 
 	testCases := []struct {
 		value, prefix string
 		count         int
+		arrlCompliant bool
 	}{
-		{"P1", "P1", 1},
-		{"P1A", "P1", 1},
-		{"P2", "P2", 2},
-		{"P3AB", "P3AB", 1},
-		{"P3A", "", 0},
-		{"P3ABC", "", 0},
-		{"P4A", "P4A", 1},
-		{"P4AB", "P4", 1},
+		{"P1", "P1", 1, false},
+		{"P1A", "P1", 1, false},
+		{"P2", "P2", 2, false},
+		{"P3AB", "P3AB", 1, false},
+		{"P3A", "", 0, false},
+		{"P3ABC", "", 0, false},
+		{"P4A", "P4A", 1, false},
+		{"P4AB", "P4", 1, false},
+		{"P5BA", "P5B", 1, false},
+		{"P5BC", "P5", 1, true},
 	}
 	for _, testCase := range testCases {
-		foundPrefixes, _ := prefixes.Find(testCase.value)
+		foundPrefixes, _ := prefixes.find(testCase.value, testCase.arrlCompliant)
 		if len(foundPrefixes) != testCase.count {
 			t.Errorf("%q: expected %d, but found %d: %v", testCase.value, testCase.count, len(foundPrefixes), foundPrefixes)
 			continue

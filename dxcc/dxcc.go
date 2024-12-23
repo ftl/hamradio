@@ -78,15 +78,29 @@ func (prefixes *Prefixes) Add(newPrefixes ...Prefix) {
 // Find returns the best matching prefixes for a given string.
 // Since a prefix might be ambiguous, a slice of prefixes that match is returned.
 func (prefixes Prefixes) Find(s string) ([]Prefix, bool) {
+	return prefixes.find(s, false)
+}
+
+// FindARRLCompliant returns the best matching ARRL compliant prefixes for a given string.
+// Since a prefix might be ambiguous, a slice of prefixes that match is returned.
+func (prefixes Prefixes) FindARRLCompliant(s string) ([]Prefix, bool) {
+	return prefixes.find(s, true)
+}
+
+func (prefixes Prefixes) find(s string, onlyARRLCompliant bool) ([]Prefix, bool) {
 	normalString := strings.ToUpper(strings.TrimSpace(s))
 	isExactMatch := true
 	for len(normalString) > 0 {
 		if ps, ok := prefixes.items[normalString]; ok {
 			result := make([]Prefix, 0, len(ps))
 			for _, prefix := range ps {
-				if !prefix.NeedsExactMatch || isExactMatch {
-					result = append(result, prefix)
+				if prefix.NeedsExactMatch && !isExactMatch {
+					continue
 				}
+				if prefix.NotARRLCompliant && onlyARRLCompliant {
+					continue
+				}
+				result = append(result, prefix)
 			}
 			if len(result) > 0 {
 				return result, true
