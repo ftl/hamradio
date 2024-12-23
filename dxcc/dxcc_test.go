@@ -8,7 +8,7 @@ func TestPrefixes_add(t *testing.T) {
 	prefixes := NewPrefixes()
 	prefix := Prefix{Prefix: "P", Name: "N"}
 
-	prefixes.add(prefix)
+	prefixes.Add(prefix)
 
 	if len(prefixes.items) != 1 {
 		t.Errorf("failed to add prefix")
@@ -21,7 +21,7 @@ func TestPrefixes_add(t *testing.T) {
 
 func TestPrefixes_Find(t *testing.T) {
 	prefixes := NewPrefixes()
-	prefixes.add(
+	prefixes.Add(
 		Prefix{Prefix: "P1"},
 		Prefix{Prefix: "P2"},
 		Prefix{Prefix: "P2"},

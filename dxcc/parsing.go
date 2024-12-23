@@ -21,7 +21,7 @@ func Read(in io.Reader) (*Prefixes, error) {
 		} else if err != nil {
 			return NewPrefixes(), err
 		}
-		allPrefixes.add(prefixes...)
+		allPrefixes.Add(prefixes...)
 	}
 	return allPrefixes, nil
 }

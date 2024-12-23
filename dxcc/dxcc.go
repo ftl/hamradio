@@ -64,7 +64,7 @@ func NewPrefixes() *Prefixes {
 	return &Prefixes{make(map[string][]Prefix)}
 }
 
-func (prefixes *Prefixes) add(newPrefixes ...Prefix) {
+func (prefixes *Prefixes) Add(newPrefixes ...Prefix) {
 	for _, prefix := range newPrefixes {
 		key := strings.ToUpper(prefix.Prefix)
 		ps, ok := prefixes.items[key]
