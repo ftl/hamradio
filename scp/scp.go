@@ -87,27 +87,33 @@ func Read(r io.Reader, parser EntryParser) (*Database, error) {
 		if !ok {
 			continue
 		}
-		for _, b := range entry.fingerprint {
-			es, ok := database.items[b]
-			if !ok {
-				es = entrySet{}
-			}
-			es.Add(entry)
-			database.items[b] = es
-		}
+		database.add(entry)
 	}
 
 	return database, nil
 }
 
+func NewDatabase(fieldNames ...FieldName) *Database {
+	var fieldSet FieldSet
+	if len(fieldNames) > 0 {
+		fieldSet = FieldSet(fieldNames)
+	} else {
+		fieldSet = FieldSet{}
+	}
+	return &Database{
+		items:    make(map[byte]entrySet),
+		fieldSet: fieldSet,
+	}
+}
+
 // FieldSet returns the set of additional data fields available per entry.
-func (database Database) FieldSet() FieldSet {
-	return database.fieldSet
+func (d Database) FieldSet() FieldSet {
+	return d.fieldSet
 }
 
 // FindStrings returns all strings in database that partially match the given string
-func (database Database) FindStrings(s string) ([]string, error) {
-	allMatches, err := database.Find(s)
+func (d Database) FindStrings(s string) ([]string, error) {
+	allMatches, err := d.Find(s)
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +127,7 @@ func (database Database) FindStrings(s string) ([]string, error) {
 }
 
 // Find returns all entries in database that are similar to the given string.
-func (database Database) Find(s string) ([]Match, error) {
+func (d Database) Find(s string) ([]Match, error) {
 	if len(s) < 3 {
 		return nil, nil
 	}
@@ -137,7 +143,7 @@ func (database Database) Find(s string) ([]Match, error) {
 			continue
 		}
 		byteMap[b] = true
-		entrySet, ok := database.items[b]
+		entrySet, ok := d.items[b]
 		if !ok {
 			continue
 		}
@@ -179,4 +185,34 @@ func collectMatches(result chan<- []Match, matches <-chan Match) {
 		return allMatches[i].LessThan(allMatches[j])
 	})
 	result <- allMatches
+}
+
+func (d Database) Add(key string, values ...string) {
+	var fieldValues FieldValues
+	if len(values) > 0 && len(values) == len(d.fieldSet) {
+		fieldValues = make(FieldValues, len(d.fieldSet))
+		for i, value := range values {
+			fieldName := d.fieldSet.Get(i)
+			// Skip the callsign and ignore fields because they are not stored in the database.
+			// The callsign is computed from the key, and the ignore field is not stored.
+			if fieldName == FieldCall || fieldName == FieldIgnore {
+				continue
+			}
+			fieldValues[fieldName] = strings.TrimSpace(value)
+		}
+	}
+
+	entry := newEntry(key, fieldValues)
+	d.add(entry)
+}
+
+func (d Database) add(entry Entry) {
+	for _, b := range entry.fingerprint {
+		es, ok := d.items[b]
+		if !ok {
+			es = entrySet{}
+		}
+		es.Add(entry)
+		d.items[b] = es
+	}
 }

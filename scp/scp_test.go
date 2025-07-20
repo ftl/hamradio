@@ -80,3 +80,93 @@ func TestDatabase_Find(t *testing.T) {
 		})
 	}
 }
+
+func TestDatabase_Add(t *testing.T) {
+	database := NewDatabase()
+	assert.Equal(t, 0, len(database.items))
+
+	database.Add("2E0AOZ")
+	database.Add("2E0BNI")
+	database.Add("2E0BPP")
+	database.Add("N1MM")
+	expectedLengths := []struct {
+		b      byte
+		length int
+	}{
+		{'0', 3},
+		{'1', 1},
+		{'2', 3},
+		{'A', 1},
+		{'B', 2},
+		{'E', 3},
+		{'I', 1},
+		{'N', 2},
+		{'M', 1},
+		{'O', 1},
+		{'P', 1},
+		{'Z', 1},
+	}
+	if len(database.items) != len(expectedLengths) {
+		t.Errorf("expected %d buckets, but got %d", len(expectedLengths), len(database.items))
+	}
+	for _, expectedLength := range expectedLengths {
+		if len(database.items[expectedLength.b]) != expectedLength.length {
+			t.Errorf("expected %d entries for %q, but got %d",
+				expectedLength.length,
+				string(expectedLength.b),
+				len(database.items[expectedLength.b]))
+		}
+	}
+
+	matches, err := database.Find("2E0BNA")
+	require.NoError(t, err)
+	assert.Len(t, matches, 2)
+
+	matches, err = database.Find("1MM")
+	require.NoError(t, err)
+	assert.Len(t, matches, 1)
+}
+
+func TestDatabase_Add_HandleDuplicate(t *testing.T) {
+	database := NewDatabase()
+	assert.Equal(t, 0, len(database.items))
+
+	database.Add("2E0AOZ")
+	database.Add("2E0BNI")
+	database.Add("2E0BPP")
+	database.Add("N1MM")
+
+	// Adding a duplicate should not change the database
+	database.Add("2E0AOZ")
+	database.Add("2E0AOZ")
+	database.Add("2E0AOZ")
+	database.Add("2E0AOZ")
+	expectedLengths := []struct {
+		b      byte
+		length int
+	}{
+		{'0', 3},
+		{'1', 1},
+		{'2', 3},
+		{'A', 1},
+		{'B', 2},
+		{'E', 3},
+		{'I', 1},
+		{'N', 2},
+		{'M', 1},
+		{'O', 1},
+		{'P', 1},
+		{'Z', 1},
+	}
+	if len(database.items) != len(expectedLengths) {
+		t.Errorf("expected %d buckets, but got %d", len(expectedLengths), len(database.items))
+	}
+	for _, expectedLength := range expectedLengths {
+		if len(database.items[expectedLength.b]) != expectedLength.length {
+			t.Errorf("expected %d entries for %q, but got %d",
+				expectedLength.length,
+				string(expectedLength.b),
+				len(database.items[expectedLength.b]))
+		}
+	}
+}
